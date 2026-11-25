@@ -19,6 +19,7 @@ import type {
   MedicineDetail,
   MedicineSearchResult,
 } from '@/lib/medicine-provider/types'
+import { displayMedicineName, isMultiItemPack } from '@/lib/medicine-provider/presentation'
 
 type SearchState =
   | { phase: 'idle' }
@@ -358,20 +359,30 @@ function DetailPanel({
 }
 
 function ShelveButton({ detail }: { detail: MedicineDetail }) {
+  const isPack = isMultiItemPack(detail.name)
   const params = new URLSearchParams()
-  params.set('name', detail.brandName ?? detail.name)
-  if (detail.strength) params.set('strength', detail.strength)
-  if (detail.form) params.set('form', detail.form)
+  const displayName = displayMedicineName(detail.brandName ?? detail.name)
+  params.set('name', displayName)
+  if (!isPack && detail.strength) params.set('strength', detail.strength)
+  if (!isPack && detail.form) params.set('form', detail.form)
   params.set('from', 'lookup')
   params.set('providerRef', detail.providerRef)
+
+  if (isPack) {
+    return (
+      <p className="max-w-2xl rounded-lg border border-warning/30 bg-warning-soft px-5 py-4 text-sm leading-6 text-foreground">
+        This pack can’t be added as one scheduled medicine. Search for each product separately and add it as its own medicine.
+      </p>
+    )
+  }
 
   return (
     <a
       href={`/dashboard/medicines/new?${params.toString()}`}
-      className="inline-flex h-10 items-center justify-center gap-1.5 self-start rounded-md bg-primary px-5 text-sm font-medium text-primary-foreground shadow-subtle transition-colors hover:bg-primary/90"
+      className="inline-flex min-h-10 max-w-full items-center justify-start gap-1.5 self-start rounded-md bg-primary px-5 py-2 text-left text-sm font-medium text-primary-foreground shadow-subtle transition-colors hover:bg-primary/90"
     >
-      <BookOpen className="size-4" aria-hidden="true" />
-      Shelve “{detail.brandName ?? detail.name}”
+      <BookOpen className="size-4 shrink-0" aria-hidden="true" />
+      <span className="line-clamp-2 min-w-0 break-words">Shelve “{displayName}”</span>
     </a>
   )
 }

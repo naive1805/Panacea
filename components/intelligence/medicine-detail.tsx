@@ -18,6 +18,7 @@ import type {
   MedicineIngredient,
   MedicineSection,
 } from '@/lib/medicine-provider/types'
+import { displayMedicineName, isMultiItemPack } from '@/lib/medicine-provider/presentation'
 import { cn } from '@/lib/utils'
 
 const CONFIDENCE_META: Record<
@@ -148,6 +149,18 @@ export function MedicineDetailView({ detail }: { detail: MedicineDetail }) {
   const inactive = detail.ingredients.filter((item) => item.role === 'inactive')
   const hasIngredients =
     detail.ingredientsConfidence !== 'unavailable' && active.length > 0
+  const medicineName = displayMedicineName(detail.name)
+  const isPack = isMultiItemPack(detail.name)
+  const sections = [
+    { title: 'What it is used for', icon: <BookOpen className="size-4" />, section: detail.uses },
+    { title: 'Form & how it is taken', icon: <Pill className="size-4" />, section: detail.administration },
+    { title: 'Side effects', icon: <Activity className="size-4" />, section: detail.sideEffects },
+    { title: 'Do not use / warnings', icon: <ShieldAlert className="size-4" />, section: detail.warnings, tone: 'warning' as const },
+    { title: 'Interactions with other drugs', icon: <FlaskConical className="size-4" />, section: detail.interactions, tone: 'warning' as const },
+    { title: 'Food & drink', icon: <Utensils className="size-4" />, section: detail.foodGuidance },
+  ]
+  const availableSections = sections.filter(({ section }) => section.confidence !== 'unavailable' && section.text)
+  const unavailableSections = sections.filter(({ section }) => section.confidence === 'unavailable' || !section.text)
 
   return (
     <div className="flex flex-col gap-8">
@@ -155,21 +168,22 @@ export function MedicineDetailView({ detail }: { detail: MedicineDetail }) {
         <p className="text-[0.7rem] font-medium tracking-[0.18em] text-muted-foreground uppercase">
           Medicine reference
         </p>
-        <h2 className="mt-2 font-serif text-3xl leading-[1.1] font-normal tracking-tight text-balance text-foreground">
-          {detail.name}
+        <h2 className="mt-2 break-words font-serif text-3xl leading-[1.1] font-normal tracking-tight text-balance text-foreground [overflow-wrap:anywhere]">
+          {medicineName}
         </h2>
 
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-4 flex min-w-0 flex-wrap gap-2">
+          {isPack ? <Badge variant="warning">Multi-item pack</Badge> : null}
           {detail.genericName && detail.genericName !== detail.name ? (
-            <Badge variant="neutral">{detail.genericName}</Badge>
+            <Badge variant="neutral" className="max-w-full whitespace-normal break-words [overflow-wrap:anywhere]">{detail.genericName}</Badge>
           ) : null}
-          {detail.brandName ? (
-            <Badge variant="accent">{detail.brandName}</Badge>
+          {detail.brandName && displayMedicineName(detail.brandName) !== medicineName ? (
+            <Badge variant="accent" className="max-w-full whitespace-normal break-words [overflow-wrap:anywhere]">{displayMedicineName(detail.brandName)}</Badge>
           ) : null}
-          {detail.strength ? (
+          {!isPack && detail.strength ? (
             <Badge variant="outline">{detail.strength}</Badge>
           ) : null}
-          {detail.route ? <Badge variant="outline">{detail.route}</Badge> : null}
+          {!isPack && detail.route ? <Badge variant="outline">{detail.route}</Badge> : null}
         </div>
 
         {detail.manufacturer ? (
@@ -185,6 +199,12 @@ export function MedicineDetailView({ detail }: { detail: MedicineDetail }) {
           <span className="tabular-nums">{detail.providerRef}</span>
         </p>
       </header>
+
+      {isPack ? (
+        <div className="rounded-lg border border-warning/30 bg-warning-soft px-5 py-4 text-sm leading-6 text-foreground">
+          This reference describes a pack containing multiple products. The listed sources did not provide a matching label for the whole pack, so some medicine-specific guidance is unavailable. Check the individual products and confirm instructions with a pharmacist.
+        </div>
+      ) : null}
 
       <section className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -211,38 +231,24 @@ export function MedicineDetailView({ detail }: { detail: MedicineDetail }) {
         )}
       </section>
 
-      <SectionCard
-        title="What it is used for"
-        icon={<BookOpen className="size-4" />}
-        section={detail.uses}
-      />
-      <SectionCard
-        title="Form & how it is taken"
-        icon={<Pill className="size-4" />}
-        section={detail.administration}
-      />
-      <SectionCard
-        title="Side effects"
-        icon={<Activity className="size-4" />}
-        section={detail.sideEffects}
-      />
-      <SectionCard
-        title="Do not use / warnings"
-        icon={<ShieldAlert className="size-4" />}
-        section={detail.warnings}
-        tone="warning"
-      />
-      <SectionCard
-        title="Interactions with other drugs"
-        icon={<FlaskConical className="size-4" />}
-        section={detail.interactions}
-        tone="warning"
-      />
-      <SectionCard
-        title="Food & drink"
-        icon={<Utensils className="size-4" />}
-        section={detail.foodGuidance}
-      />
+      {availableSections.map((item) => (
+        <SectionCard key={item.title} {...item} />
+      ))}
+      {unavailableSections.length > 0 ? (
+        <details className="rounded-lg border bg-card px-5 py-4">
+          <summary className="cursor-pointer text-sm font-medium text-foreground">
+            Information not available from these sources ({unavailableSections.length})
+          </summary>
+          <p className="mt-3 text-sm leading-6 text-muted-foreground">
+            Nothing is guessed. Check the product leaflet or ask a pharmacist for these details.
+          </p>
+          <ul className="mt-3 flex flex-wrap gap-2">
+            {unavailableSections.map(({ title }) => (
+              <li key={title}><Badge variant="neutral">{title}</Badge></li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
 
       <section className="rounded-lg border border-dashed border-border-strong bg-surface p-5">
         <div className="flex items-start gap-3">
