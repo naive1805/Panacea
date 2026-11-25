@@ -4,6 +4,7 @@ import {
   getMedicineInfoProvider,
   supportsIntelligence,
 } from '@/lib/medicine-provider'
+import { nlmProvider } from '@/lib/medicine-provider/nlm'
 import type {
   MedicineDetail,
   MedicineInfo,
@@ -58,7 +59,23 @@ export async function searchMedicines(
     }
   }
 
-  return provider.searchByName(query)
+  const result = await provider.searchByName(query)
+  if (result.ok && result.data.length > 0) return result
+
+  // drugdb.in has India-focused coverage. Use the existing NIH RxNorm
+  // provider when it has no match or is temporarily unavailable.
+  const fallback = await nlmProvider.searchByName?.(query)
+  if (fallback?.ok && fallback.data.length > 0) {
+    return {
+      ...fallback,
+      data: fallback.data.map((item) => ({
+        ...item,
+        providerRef: `rxnorm:${item.providerRef}`,
+      })),
+    }
+  }
+
+  return result
 }
 
 export async function getMedicineDetail(
@@ -68,7 +85,9 @@ export async function getMedicineDetail(
   if (!auth) return signedOut<MedicineDetail>()
   const { supabase } = auth
 
-  const provider = getMedicineInfoProvider()
+  const activeProvider = getMedicineInfoProvider()
+  const isRxNorm = /^rxnorm:(\d+)$/.exec(providerRef.trim())
+  const provider = isRxNorm ? nlmProvider : activeProvider
   if (!supportsIntelligence(provider)) {
     return {
       ok: false,
@@ -82,7 +101,9 @@ export async function getMedicineDetail(
   // drugdb.in refs are `{type}:{sctId}`, e.g. `medicine:529451000189107`.
   // Legacy numeric RxCUI refs resolve as drugdb.in SCTIDs are numeric too —
   // treat a bare numeric ref as a medicine lookup for backwards compatibility.
-  const normalized = /^(medicine|generic|substance):\d+$/.test(ref)
+  const normalized = isRxNorm
+    ? ref
+    : /^(medicine|generic|substance):\d+$/.test(ref)
     ? ref
     : /^\d+$/.test(ref)
       ? `medicine:${ref}`
@@ -96,21 +117,83 @@ export async function getMedicineDetail(
     }
   }
 
+  const providerLookupRef = isRxNorm?.[1] ?? normalized
   const cached = await readCachedDetail(supabase, provider.id, normalized)
   if (cached) {
+    if (!isRxNorm && cached.foodGuidance.confidence === 'unavailable') {
+      const enhanced = await addMatchedFoodGuidance(cached)
+      if (enhanced.foodGuidance.confidence !== 'unavailable') {
+        try {
+          await writeCachedDetail(provider.id, enhanced)
+        } catch {
+          // Keep the live result even when the shared cache is unavailable.
+        }
+      }
+      return { ok: true, provider: provider.id, data: enhanced }
+    }
     return { ok: true, provider: provider.id, data: cached }
   }
 
-  const result = await provider.getDetail(normalized)
+  const result = await provider.getDetail(providerLookupRef)
   if (!result.ok) return result
 
+  let detail: MedicineDetail = { ...result.data, providerRef: normalized }
+  if (!isRxNorm && detail.foodGuidance.confidence === 'unavailable') {
+    detail = await addMatchedFoodGuidance(detail)
+  }
+
   try {
-    await writeCachedDetail(provider.id, result.data)
+    await writeCachedDetail(provider.id, detail)
   } catch {
     // Best-effort: a cache write must never turn a good lookup into a failure.
   }
 
-  return result
+  return { ok: true, provider: provider.id, data: detail }
+}
+
+function ingredientKey(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+}
+
+/** Add FDA label food guidance only when the complete active ingredient sets
+ * match. This avoids attaching advice from a similarly named product. */
+async function addMatchedFoodGuidance(
+  detail: MedicineDetail,
+): Promise<MedicineDetail> {
+  const activeIngredients = detail.ingredients
+    .filter((item) => item.role === 'active')
+    .map((item) => ingredientKey(item.name))
+    .filter(Boolean)
+  if (activeIngredients.length === 0) return detail
+
+  const matches = await nlmProvider.searchByName?.(detail.name)
+  if (!matches?.ok) return detail
+
+  const target = new Set(activeIngredients)
+  for (const match of matches.data.slice(0, 8)) {
+    const response = await nlmProvider.getDetail?.(match.providerRef)
+    if (!response?.ok || response.data.foodGuidance.confidence === 'unavailable') continue
+
+    const candidate = new Set(
+      response.data.ingredients
+        .filter((item) => item.role === 'active')
+        .map((item) => ingredientKey(item.name))
+        .filter(Boolean),
+    )
+    if (candidate.size !== target.size || [...target].some((name) => !candidate.has(name))) {
+      continue
+    }
+
+    const foodSource = response.data.foodGuidance.source
+    return {
+      ...detail,
+      foodGuidance: response.data.foodGuidance,
+      sources: foodSource && !detail.sources.some((source) => source.url === foodSource.url)
+        ? [...detail.sources, foodSource]
+        : detail.sources,
+    }
+  }
+  return detail
 }
 
 function normalizeName(value: string): string {

@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import type { CSSProperties } from 'react'
 
 import { DoseHistory } from '@/components/history/dose-history'
+import { AllergyPanel } from '@/components/library/allergy-panel'
 import { MedicineActions } from '@/components/library/medicine-actions'
 import { MedicineIntelligence } from '@/components/library/medicine-intelligence'
 import { Badge } from '@/components/ui/badge'
@@ -25,13 +26,16 @@ export default async function MedicineDetailPage({
   const { id } = await params
   const { supabase, userId } = await requireUserOrRedirect()
 
-  const [medicine, schedules, logs, prefs, allergies] = await Promise.all([
+  const [medicine, schedules, logs, prefs, allergyResult] = await Promise.all([
     fetchMedicine(supabase, userId, id),
     fetchSchedulesForMedicines(supabase, userId, [id]),
     fetchMedicineDoseLogs(supabase, userId, id, 10),
     fetchNotificationPrefs(supabase, userId),
-    fetchAllergies(supabase, userId).catch(() => []),
+    fetchAllergies(supabase, userId)
+      .then((data) => ({ data, error: false }))
+      .catch(() => ({ data: [], error: true })),
   ])
+  const allergies = allergyResult.data
 
   if (!medicine) {
     notFound()
@@ -149,6 +153,8 @@ export default async function MedicineDetailPage({
               </div>
             </section>
           ) : null}
+
+          <AllergyPanel initialAllergies={allergies} loadError={allergyResult.error} />
 
           <MedicineIntelligence
             medicineId={medicine.id}

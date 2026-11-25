@@ -22,7 +22,7 @@ export default async function MedicineLookupPage() {
         className="mt-6"
         eyebrow="Medicine intelligence"
         title="Look up a medicine"
-        description="Search drugdb.in — Common Drug Codes for India — for brands, salts, composition, uses, warnings and interactions. Panacea reports only what the source provides."
+        description="Search India-focused medicine records with NIH RxNorm fallback. Panacea reports food and medicine guidance only when a matching source provides it."
       />
 
       <div className="mt-10">

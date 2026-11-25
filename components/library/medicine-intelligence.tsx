@@ -38,7 +38,7 @@ function findAllergyMatches(
 }
 
 /**
- * Recognizes a library medicine in drugdb.in and renders its record in the
+ * Recognizes a library medicine in available sources and renders its record in the
  * empty reading space of the library detail page.
  *
  * - Hand-typed medicines are matched by name (+ strength tie-break); shelved
@@ -66,11 +66,11 @@ export async function MedicineIntelligence({
     return (
       <section className="flex flex-col gap-3">
         <h2 className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
-          From drugdb.in
+          Medicine information
         </h2>
         <div className="rounded-lg border border-dashed border-border-strong bg-card px-5 py-6 text-center">
           <p className="text-sm leading-6 text-muted-foreground">
-            No drugdb.in record matched “{name}” yet. Check the spelling, or
+            No medicine information record matched “{name}” yet. Check the spelling, or
             look it up by brand or salt name.
           </p>
           <Link
@@ -90,7 +90,7 @@ export async function MedicineIntelligence({
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
-        From drugdb.in · {detail.brandName ?? detail.name}
+        Medicine information · {detail.brandName ?? detail.name}
       </h2>
 
       {allergyMatches.length > 0 ? (

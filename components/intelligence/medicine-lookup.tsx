@@ -37,6 +37,15 @@ const TERM_TYPE_LABELS: Record<string, string> = {
   medicine: 'Branded medicine',
   generic: 'Generic (salt)',
   substance: 'Substance (salt)',
+  SBD: 'Branded medicine',
+  SBDC: 'Branded medicine',
+  SBDF: 'Branded medicine',
+  BN: 'Brand name',
+  SCD: 'Generic medicine',
+  SCDC: 'Generic medicine',
+  SCDF: 'Generic medicine',
+  IN: 'Active ingredient',
+  MIN: 'Active ingredient',
 }
 
 function describeTermType(termType: string): string | null {
@@ -191,10 +200,9 @@ function SearchResults({
           Look a medicine up
         </p>
         <p className="mx-auto mt-2 max-w-lg text-sm leading-6 text-muted-foreground">
-          Read medicine records from drugdb.in — Common Drug Codes for India
-          (NRCeS). Panacea shows brand, manufacturer, salt composition,
-          uses, warnings and interactions only as the source provides them —
-          it never invents dosage or side effects.
+          Search drugdb.in’s India-focused medicine records, with NIH RxNorm
+          as a fallback. Panacea shows food guidance only when a matching
+          published label provides it; it never invents advice.
         </p>
       </div>
     )

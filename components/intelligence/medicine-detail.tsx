@@ -24,9 +24,9 @@ const CONFIDENCE_META: Record<
   InfoConfidence,
   { label: string; variant: 'success' | 'warning' | 'neutral' }
 > = {
-  verified: { label: 'From drugdb.in', variant: 'success' },
+  verified: { label: 'Verified source data', variant: 'success' },
   educational: { label: 'General guidance', variant: 'warning' },
-  unavailable: { label: 'Not in drugdb.in', variant: 'neutral' },
+  unavailable: { label: 'Not available', variant: 'neutral' },
 }
 
 function ConfidenceBadge({ confidence }: { confidence: InfoConfidence }) {
@@ -128,7 +128,8 @@ function SectionCard({
           </>
         ) : (
           <p className="text-sm leading-6 text-muted-foreground">
-            Not in drugdb.in for this medicine — nothing is guessed.
+            This information is not available from the listed sources for this medicine.
+            Nothing is guessed.
           </p>
         )}
       </div>
@@ -254,8 +255,8 @@ export function MedicineDetailView({ detail }: { detail: MedicineDetail }) {
               Not a safety check
             </h3>
             <p className="mt-1 text-sm leading-6 text-muted-foreground">
-              Interaction text above is quoted from drugdb.in when the source
-              publishes it. Panacea does not check whether your medicines are
+              Information above is quoted from the listed sources when they
+              publish it. Panacea does not check whether your medicines are
               safe to take together, and this page never tells you a
               combination is safe. Ask a pharmacist or doctor.
             </p>

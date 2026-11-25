@@ -392,11 +392,14 @@ export const healthPilotProvider: MedicineInfoProvider = {
       return failure('not_found', 'Type at least two letters to search.')
     }
     try {
-      const [medicines, generics, substances] = await Promise.all([
+      const searches = await Promise.allSettled([
         searchType(trimmed, 'medicine', 12, true),
         searchType(trimmed, 'generic', 8, false),
         searchType(trimmed, 'substance', 6, false),
       ])
+      const [medicines, generics, substances] = searches.map((search) =>
+        search.status === 'fulfilled' ? search.value : [],
+      )
       const merged = dedupe([...medicines, ...generics, ...substances]).slice(0, 25)
       if (merged.length === 0) {
         return failure(
