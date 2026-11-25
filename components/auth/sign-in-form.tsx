@@ -78,7 +78,6 @@ export function SignInForm({
         <Label htmlFor="email">Email</Label>
         <Input
           id="email"
-          name="email"
           type="email"
           autoComplete="email"
           value={email}
@@ -93,7 +92,6 @@ export function SignInForm({
         <Label htmlFor="password">Password</Label>
         <Input
           id="password"
-          name="password"
           type="password"
           autoComplete="current-password"
           value={password}
