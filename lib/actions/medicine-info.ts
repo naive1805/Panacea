@@ -118,34 +118,35 @@ export async function getMedicineDetail(
   }
 
   const providerLookupRef = isRxNorm?.[1] ?? normalized
-  const cached = await readCachedDetail(supabase, provider.id, normalized)
+  // Keep NIH detail live: package concepts may include related product records
+  // that are not represented by the shared cache row.
+  const cached = isRxNorm
+    ? null
+    : await readCachedDetail(supabase, provider.id, normalized)
   if (cached) {
-    if (!isRxNorm && cached.foodGuidance.confidence === 'unavailable') {
-      const enhanced = await addMatchedFoodGuidance(cached)
-      if (enhanced.foodGuidance.confidence !== 'unavailable') {
-        try {
-          await writeCachedDetail(provider.id, enhanced)
-        } catch {
-          // Keep the live result even when the shared cache is unavailable.
-        }
+    const enhanced = await addMatchedLabelInformation(cached)
+    if (enhanced !== cached) {
+      try {
+        await writeCachedDetail(provider.id, enhanced)
+      } catch {
+        // Keep the live result even when the shared cache is unavailable.
       }
-      return { ok: true, provider: provider.id, data: enhanced }
     }
-    return { ok: true, provider: provider.id, data: cached }
+    return { ok: true, provider: provider.id, data: enhanced }
   }
 
   const result = await provider.getDetail(providerLookupRef)
   if (!result.ok) return result
 
   let detail: MedicineDetail = { ...result.data, providerRef: normalized }
-  if (!isRxNorm && detail.foodGuidance.confidence === 'unavailable') {
-    detail = await addMatchedFoodGuidance(detail)
-  }
+  if (!isRxNorm) detail = await addMatchedLabelInformation(detail)
 
-  try {
-    await writeCachedDetail(provider.id, detail)
-  } catch {
-    // Best-effort: a cache write must never turn a good lookup into a failure.
+  if (!isRxNorm) {
+    try {
+      await writeCachedDetail(provider.id, detail)
+    } catch {
+      // Best-effort: a cache write must never turn a good lookup into a failure.
+    }
   }
 
   return { ok: true, provider: provider.id, data: detail }
@@ -155,9 +156,23 @@ function ingredientKey(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 }
 
-/** Add FDA label food guidance only when the complete active ingredient sets
- * match. This avoids attaching advice from a similarly named product. */
-async function addMatchedFoodGuidance(
+function sectionAvailable(section: MedicineDetail['uses']): boolean {
+  return section.confidence !== 'unavailable' && Boolean(section.text)
+}
+
+function ingredientStrengthSignature(detail: MedicineDetail): string | null {
+  const active = detail.ingredients.filter((item) => item.role === 'active')
+  if (active.length === 0 || active.some((item) => !item.strength)) return null
+  return active
+    .map((item) => `${ingredientKey(item.name)}:${ingredientKey(item.strength ?? '')}`)
+    .sort()
+    .join('|')
+}
+
+/** Enrich drugdb records only from an FDA label with the same complete active
+ * ingredient set. Strengths and form must also agree before clinical sections
+ * are copied; food statements need the exact ingredient set. */
+async function addMatchedLabelInformation(
   detail: MedicineDetail,
 ): Promise<MedicineDetail> {
   const activeIngredients = detail.ingredients
@@ -165,16 +180,21 @@ async function addMatchedFoodGuidance(
     .map((item) => ingredientKey(item.name))
     .filter(Boolean)
   if (activeIngredients.length === 0) return detail
+  const needsFood = !sectionAvailable(detail.foodGuidance)
+  const needsClinical = [detail.uses, detail.administration, detail.warnings, detail.sideEffects, detail.interactions]
+    .some((item) => !sectionAvailable(item))
+  if (!needsFood && !needsClinical) return detail
 
   const matches = await nlmProvider.searchByName?.(detail.name)
   if (!matches?.ok) return detail
 
   const target = new Set(activeIngredients)
-  const details = await Promise.all(matches.data.slice(0, 8).map(async (match) => {
+  const details = await Promise.all(matches.data.slice(0, 4).map(async (match) => {
     try { return await nlmProvider.getDetail?.(match.providerRef) ?? null } catch { return null }
   }))
+  let enriched = detail
   for (const response of details) {
-    if (!response?.ok || response.data.foodGuidance.confidence === 'unavailable') continue
+    if (!response?.ok) continue
 
     const candidate = new Set(
       response.data.ingredients
@@ -186,16 +206,33 @@ async function addMatchedFoodGuidance(
       continue
     }
 
-    const foodSource = response.data.foodGuidance.source
-    return {
-      ...detail,
-      foodGuidance: response.data.foodGuidance,
-      sources: foodSource && !detail.sources.some((source) => source.url === foodSource.url)
-        ? [...detail.sources, foodSource]
-        : detail.sources,
+    const sameStrength = ingredientStrengthSignature(detail) !== null &&
+      ingredientStrengthSignature(detail) === ingredientStrengthSignature(response.data)
+    const sameForm = Boolean(detail.form && response.data.form && detail.form === response.data.form)
+    const canCopyClinical = sameStrength && sameForm
+    const updates: Partial<MedicineDetail> = {}
+    const sourceUrls = new Set(enriched.sources.map((source) => source.url))
+    const addSource = (section: MedicineDetail['uses']) => {
+      if (section.source && !sourceUrls.has(section.source.url)) {
+        sourceUrls.add(section.source.url)
+        updates.sources = [...(updates.sources ?? enriched.sources), section.source]
+      }
     }
+    if (!sectionAvailable(enriched.foodGuidance) && sectionAvailable(response.data.foodGuidance)) {
+      updates.foodGuidance = response.data.foodGuidance
+      addSource(response.data.foodGuidance)
+    }
+    if (canCopyClinical) {
+      for (const key of ['uses', 'administration', 'warnings', 'sideEffects', 'interactions'] as const) {
+        if (!sectionAvailable(enriched[key]) && sectionAvailable(response.data[key])) {
+          updates[key] = response.data[key]
+          addSource(response.data[key])
+        }
+      }
+    }
+    if (Object.keys(updates).length > 0) enriched = { ...enriched, ...updates }
   }
-  return detail
+  return enriched
 }
 
 function normalizeName(value: string): string {

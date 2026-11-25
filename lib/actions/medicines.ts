@@ -17,7 +17,7 @@ function normalizeProviderRef(value: string | undefined): string | null {
   const trimmed = value?.trim() ?? ''
   if (!trimmed) return null
   // drugdb.in refs (`medicine:…`); bare numeric SCTIDs treated as medicines.
-  if (/^(medicine|generic|substance):\d+$/.test(trimmed)) return trimmed
+  if (/^(medicine|generic|substance|rxnorm):\d+$/.test(trimmed)) return trimmed
   if (/^\d+$/.test(trimmed)) return `medicine:${trimmed}`
   return null
 }

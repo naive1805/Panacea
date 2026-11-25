@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, type FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { Plus, Trash2 } from 'lucide-react'
 
 import { createAllergy, deleteAllergy } from '@/lib/actions/allergies'
@@ -15,6 +16,7 @@ export function AllergyPanel({
   initialAllergies: Allergy[]
   loadError?: boolean
 }) {
+  const router = useRouter()
   const [allergies, setAllergies] = useState(initialAllergies)
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
@@ -29,6 +31,7 @@ export function AllergyPanel({
     if (result.ok) {
       setAllergies((current) => [...current, result.data])
       setName('')
+      router.refresh()
     } else {
       setMessage(result.error)
     }
@@ -42,6 +45,7 @@ export function AllergyPanel({
     const result = await deleteAllergy(allergy.id)
     if (result.ok) {
       setAllergies((current) => current.filter((item) => item.id !== allergy.id))
+      router.refresh()
     } else {
       setMessage(result.error)
     }
@@ -55,14 +59,14 @@ export function AllergyPanel({
           Allergies
         </h2>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Your private list is compared with listed active ingredients when available.
+          Your private list is compared with listed ingredients when available.
         </p>
       </div>
 
       <div className="rounded-lg border bg-card p-4">
         {loadError ? (
           <p className="text-sm leading-6 text-destructive">
-            Allergy records could not be loaded. Apply the medicine intelligence database migration, then refresh this page.
+            Allergy records could not be loaded. Check that migration 0002_medicine_intelligence.sql or 0005_allergies.sql has been applied, then refresh this page.
           </p>
         ) : allergies.length > 0 ? (
           <ul className="mb-4 flex flex-col divide-y">

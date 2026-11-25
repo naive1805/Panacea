@@ -8,13 +8,14 @@ import {
   searchDailyMedByName,
   splSourceUrl,
   type ParsedSpl,
-  type SplSearchHit,
 } from './dailymed'
 import { NlmUnreachableError } from './http'
 import {
   barcodeToNdcCandidates,
   getRxNormIngredients,
+  getRxNormRelatedProducts,
   getRxNormProperties,
+  isRxNormPackage,
   rxcuiFromNdc,
   searchRxNormByName,
 } from './rxnorm'
@@ -248,30 +249,26 @@ async function findMatchedLabel(
     }
   }
 
+  const searchResults = await Promise.all(
+    terms.slice(0, 5).map((term) => searchDailyMedByName(term, 6)),
+  )
   const seen = new Set<string>()
-  const hits: SplSearchHit[] = []
-  for (const term of terms) {
-    const results = await searchDailyMedByName(term, 6)
-    for (const hit of results) {
-      if (seen.has(hit.setid)) continue
-      seen.add(hit.setid)
-      hits.push(hit)
-      if (hits.length >= 8) break
-    }
-    if (hits.length >= 8) break
-  }
+  const hits = searchResults.flat().filter((hit) => {
+    if (seen.has(hit.setid)) return false
+    seen.add(hit.setid)
+    return true
+  }).slice(0, 8)
 
-  let best: { setid: string; parsed: ParsedSpl; score: number } | null = null
-  for (const hit of hits.slice(0, 8)) {
+  const scored = await Promise.all(hits.map(async (hit) => {
     const xml = await fetchSplXml(hit.setid)
-    if (!xml) continue
+    if (!xml) return null
     const parsed = parseSpl(xml)
     const score = scoreLabel(parsed, rxIngredients, fallbackName)
-    if (score <= 0) continue
-    if (!best || score > best.score) {
-      best = { setid: hit.setid, parsed, score }
-    }
-  }
+    return score > 0 ? { setid: hit.setid, parsed, score } : null
+  }))
+  const best = scored
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => b.score - a.score)[0]
 
   return best ? { setid: best.setid, parsed: best.parsed } : null
 }
@@ -366,6 +363,19 @@ function buildFromRxNorm(
   }
 }
 
+async function resolveRxNormDetail(
+  providerRef: string,
+): Promise<{ detail: MedicineDetail; termType: string } | null> {
+  const properties = await getRxNormProperties(providerRef)
+  if (!properties) return null
+  const ingredientNames = await getRxNormIngredients(providerRef)
+  const matched = await findMatchedLabel(ingredientNames, properties.name)
+  const detail = matched
+    ? buildFromLabel(providerRef, matched.setid, matched.parsed, properties.name, properties.termType)
+    : buildFromRxNorm(providerRef, properties.name, properties.termType, ingredientNames)
+  return { detail, termType: properties.termType }
+}
+
 export const nlmProvider: MedicineInfoProvider = {
   id: ID,
   label: LABEL,
@@ -404,28 +414,44 @@ export const nlmProvider: MedicineInfoProvider = {
       return failure('not_found', 'That medicine reference is not valid.')
     }
     try {
-      const properties = await getRxNormProperties(providerRef)
-      if (!properties) {
+      const resolved = await resolveRxNormDetail(providerRef)
+      if (!resolved) {
         return failure('not_found', 'That medicine could not be found in RxNorm.')
       }
-
-      const ingredientNames = await getRxNormIngredients(providerRef)
-      const matched = await findMatchedLabel(ingredientNames, properties.name)
-
-      const detail = matched
-        ? buildFromLabel(
-            providerRef,
-            matched.setid,
-            matched.parsed,
-            properties.name,
-            properties.termType,
-          )
-        : buildFromRxNorm(
-            providerRef,
-            properties.name,
-            properties.termType,
-            ingredientNames,
-          )
+      let detail = resolved.detail
+      if (isRxNormPackage(resolved.termType)) {
+        const packageIngredients = new Set(detail.ingredients.map((item) => normalize(item.name)))
+        const related = await getRxNormRelatedProducts(providerRef).catch(() => [])
+        const childRecords = await Promise.all(
+          related.slice(0, 4).map(async (product) => {
+            try {
+              const result = await resolveRxNormDetail(product.rxcui)
+              if (!result) return null
+              const childIngredients = result.detail.ingredients
+                .filter((item) => item.role === 'active')
+                .map((item) => normalize(item.name))
+                .filter(Boolean)
+              if (childIngredients.length === 0 || childIngredients.some((name) => !packageIngredients.has(name))) return null
+              return result.detail
+            } catch {
+              return null
+            }
+          }),
+        )
+        const seenIngredients = new Set<string>()
+        const components = childRecords.filter((record): record is MedicineDetail => {
+          if (!record) return false
+          const key = record.ingredients
+            .filter((item) => item.role === 'active')
+            .map((item) => normalize(item.name))
+            .sort()
+            .join('|')
+          if (!key || seenIngredients.has(key)) return false
+          seenIngredients.add(key)
+          return true
+        })
+        detail = { ...detail, components }
+      }
 
       return { ok: true, provider: ID, data: detail }
     } catch (error) {

@@ -39,6 +39,31 @@ type RelatedResponse = {
   }
 }
 
+const PACKAGE_TERM_TYPES = new Set(['GPCK', 'BPCK'])
+
+export function isRxNormPackage(termType: string): boolean {
+  return PACKAGE_TERM_TYPES.has(termType)
+}
+
+export async function getRxNormRelatedProducts(
+  rxcui: string,
+): Promise<Array<{ rxcui: string; name: string; termType: string }>> {
+  if (!isRxcui(rxcui)) return []
+  const data = await getJson<RelatedResponse>(
+    `${RXNAV_BASE}/rxcui/${rxcui}/related.json?tty=SBD%20SCD`,
+  )
+  const seen = new Set<string>()
+  const results: Array<{ rxcui: string; name: string; termType: string }> = []
+  for (const group of data?.relatedGroup?.conceptGroup ?? []) {
+    for (const concept of group.conceptProperties ?? []) {
+      if (!isRxcui(concept.rxcui) || !concept.name || seen.has(concept.rxcui)) continue
+      seen.add(concept.rxcui)
+      results.push({ rxcui: concept.rxcui, name: concept.name, termType: concept.tty ?? group.tty ?? '' })
+    }
+  }
+  return results
+}
+
 type IdGroupResponse = { idGroup?: { rxnormId?: string[] } }
 
 export type RxNormProperties = {

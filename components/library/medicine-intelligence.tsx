@@ -1,8 +1,9 @@
-import { Search, TriangleAlert } from 'lucide-react'
+import { Search } from 'lucide-react'
 import Link from 'next/link'
 
 import { MedicineDetailView } from '@/components/intelligence/medicine-detail'
 import { resolveLibraryMedicineDetail } from '@/lib/actions/medicine-info'
+import { displayMedicineName } from '@/lib/medicine-provider/presentation'
 import type { Allergy } from '@/lib/types'
 
 type MedicineIntelligenceProps = {
@@ -10,30 +11,7 @@ type MedicineIntelligenceProps = {
   strength: string | null
   providerRef: string | null
   allergies: Allergy[]
-}
-
-function normalize(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
-}
-
-function findAllergyMatches(
-  ingredients: Array<{ name: string }>,
-  allergies: Allergy[],
-): Array<{ allergy: string; ingredient: string }> {
-  const matches: Array<{ allergy: string; ingredient: string }> = []
-  for (const allergy of allergies) {
-    const a = normalize(allergy.name)
-    if (!a) continue
-    for (const ingredient of ingredients) {
-      const b = normalize(ingredient.name)
-      if (!b) continue
-      if (a.length >= 3 && b.length >= 3 && (a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `))) {
-        matches.push({ allergy: allergy.name, ingredient: ingredient.name })
-        break
-      }
-    }
-  }
-  return matches
+  allergyLoadError?: boolean
 }
 
 /**
@@ -56,6 +34,7 @@ export async function MedicineIntelligence({
   strength,
   providerRef,
   allergies,
+  allergyLoadError = false,
 }: MedicineIntelligenceProps) {
   const detail = await resolveLibraryMedicineDetail({ name, strength, providerRef })
 
@@ -82,41 +61,12 @@ export async function MedicineIntelligence({
     )
   }
 
-  const allergyMatches = findAllergyMatches(detail.ingredients, allergies)
-
   return (
     <section className="flex flex-col gap-3">
       <h2 className="text-xs font-medium tracking-[0.16em] text-muted-foreground uppercase">
-        Medicine information · {detail.brandName ?? detail.name}
+          Medicine information · {displayMedicineName(detail.brandName ?? detail.name)}
       </h2>
-
-      {allergyMatches.length > 0 ? (
-        <div
-          role="alert"
-          className="flex items-start gap-3 rounded-lg border border-destructive/25 bg-destructive-soft p-4"
-        >
-          <TriangleAlert className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
-          <div>
-            <p className="text-sm font-medium text-foreground">
-              Possible allergy overlap — ask your pharmacist
-            </p>
-            <ul className="mt-1.5 flex flex-col gap-1">
-              {allergyMatches.map((match) => (
-                <li key={`${match.allergy}-${match.ingredient}`} className="text-sm leading-6 text-muted-foreground">
-                  Your allergy “{match.allergy}” overlaps “{match.ingredient}”
-                  in this medicine.
-                </li>
-              ))}
-            </ul>
-            <p className="mt-1.5 text-xs leading-5 text-muted-foreground">
-              Name matching only — not a medical verdict. Do not start or stop
-              anything on this hint alone.
-            </p>
-          </div>
-        </div>
-      ) : null}
-
-      <MedicineDetailView detail={detail} />
+      <MedicineDetailView detail={detail} allergies={allergies} allergyLoadError={allergyLoadError} />
     </section>
   )
 }

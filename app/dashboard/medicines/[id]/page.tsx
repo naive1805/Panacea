@@ -163,6 +163,7 @@ export default async function MedicineDetailPage({
             strength={medicine.strength}
             providerRef={medicine.provider_ref}
             allergies={allergies}
+            allergyLoadError={allergyResult.error}
           />
 
           <section className="flex flex-col gap-3">

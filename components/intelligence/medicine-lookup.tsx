@@ -20,6 +20,7 @@ import type {
   MedicineSearchResult,
 } from '@/lib/medicine-provider/types'
 import { displayMedicineName, isMultiItemPack } from '@/lib/medicine-provider/presentation'
+import type { Allergy } from '@/lib/types'
 
 type SearchState =
   | { phase: 'idle' }
@@ -47,6 +48,8 @@ const TERM_TYPE_LABELS: Record<string, string> = {
   SCDF: 'Generic medicine',
   IN: 'Active ingredient',
   MIN: 'Active ingredient',
+  GPCK: 'Generic pack · multiple products',
+  BPCK: 'Branded pack · multiple products',
 }
 
 function describeTermType(termType: string): string | null {
@@ -55,11 +58,17 @@ function describeTermType(termType: string): string | null {
 
 /**
  * Medicine search against drugdb.in (Common Drug Codes for India / NRCeS).
- * Results carry no health advice until a record is opened; the detail view
- * only displays what the source supplies — dosage schedules, side effects
- * and food guidance are reported as unavailable, never invented.
+ * Results carry no health advice until a record is opened. The detail view
+ * shows provider data and matched label information; missing information is
+ * reported rather than guessed.
  */
-export function MedicineLookup() {
+export function MedicineLookup({
+  allergies,
+  allergyLoadError,
+}: {
+  allergies: Allergy[]
+  allergyLoadError: boolean
+}) {
   const [query, setQuery] = useState('')
   const [search, setSearch] = useState<SearchState>({ phase: 'idle' })
   const [detail, setDetail] = useState<DetailState>({ phase: 'idle' })
@@ -104,14 +113,14 @@ export function MedicineLookup() {
 
   async function openDetail(result: MedicineSearchResult) {
     const seq = ++detailSeq.current
-    setDetail({ phase: 'loading', name: result.name })
+    setDetail({ phase: 'loading', name: displayMedicineName(result.name) })
 
     try {
       const response = await getMedicineDetail(result.providerRef)
       if (seq !== detailSeq.current) return
 
       if (!response.ok) {
-        setDetail({ phase: 'error', name: result.name, message: response.message })
+        setDetail({ phase: 'error', name: displayMedicineName(result.name), message: response.message })
         return
       }
       setDetail({ phase: 'loaded', detail: response.data })
@@ -119,7 +128,7 @@ export function MedicineLookup() {
       if (seq !== detailSeq.current) return
       setDetail({
         phase: 'error',
-        name: result.name,
+        name: displayMedicineName(result.name),
         message: 'The medicine service could not be reached. Please try again.',
       })
     }
@@ -172,6 +181,8 @@ export function MedicineLookup() {
         ) : (
           <DetailPanel
             state={detail}
+            allergies={allergies}
+            allergyLoadError={allergyLoadError}
             onBack={backToResults}
             onRetryQuery={() => {
               const term = query.trim()
@@ -272,7 +283,7 @@ function SearchResults({
               >
                 <span className="flex min-w-0 flex-col">
                   <span className="truncate font-serif text-lg text-foreground">
-                    {result.name}
+                    {displayMedicineName(result.name)}
                   </span>
                   {label ? (
                     <span className="mt-0.5 text-xs text-muted-foreground">
@@ -295,10 +306,14 @@ function SearchResults({
 
 function DetailPanel({
   state,
+  allergies,
+  allergyLoadError,
   onBack,
   onRetryQuery,
 }: {
   state: DetailState
+  allergies: Allergy[]
+  allergyLoadError: boolean
   onBack: () => void
   onRetryQuery: () => void
 }) {
@@ -351,7 +366,11 @@ function DetailPanel({
       {state.phase === 'loaded' ? (
         <>
           <ShelveButton detail={state.detail} />
-          <MedicineDetailView detail={state.detail} />
+          <MedicineDetailView
+            detail={state.detail}
+            allergies={allergies}
+            allergyLoadError={allergyLoadError}
+          />
         </>
       ) : null}
     </div>

@@ -77,6 +77,8 @@ export type MedicineDetail = {
   foodGuidance: MedicineSection
   sources: InfoSource[]
   retrievedAt: string
+  /** RxNorm-linked products for package concepts; not persisted in the shared cache. */
+  components?: MedicineDetail[]
 }
 
 export type ProviderFailureReason =
