@@ -10,6 +10,11 @@ type SignInPageProps = {
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams
+  const requestedNext = params?.next
+  const nextPath =
+    requestedNext === '/dashboard' || requestedNext?.startsWith('/dashboard/')
+      ? requestedNext
+      : '/dashboard'
   const initialMessage =
     params?.confirmed === 'true'
       ? 'Your email is confirmed. You can sign in now.'
@@ -22,7 +27,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
     >
       <SignInForm
         initialMessage={initialMessage}
-        nextPath={params?.next || '/dashboard'}
+        nextPath={nextPath}
       />
     </AuthShell>
   )

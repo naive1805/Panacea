@@ -4,6 +4,22 @@ import { revalidatePath } from 'next/cache'
 
 import { failure, requireUser } from '@/lib/server/session'
 
+function isBarcodeTableMissing(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) return false
+  const code = error.code
+  return code === '42P01' || code === 'PGRST205'
+}
+
+function barcodeSetupFailure(error: unknown): { ok: false; error: string } {
+  if (isBarcodeTableMissing(error)) {
+    return {
+      ok: false,
+      error: 'Barcode storage is not set up yet. Apply the Supabase migrations, including 0004_medicine_barcodes.sql.',
+    }
+  }
+  return failure(error)
+}
+
 export async function saveScannedBarcode(
   rawBarcode: string,
   format?: string | null,
@@ -46,7 +62,7 @@ export async function saveScannedBarcode(
     revalidatePath('/dashboard/scan')
     return { ok: true, duplicate: false }
   } catch (error) {
-    return failure(error)
+    return barcodeSetupFailure(error)
   }
 }
 
@@ -85,7 +101,7 @@ export async function assignBarcodeToMedicine(
     revalidatePath('/dashboard/medicines')
     return { ok: true }
   } catch (error) {
-    return failure(error)
+    return barcodeSetupFailure(error)
   }
 }
 
@@ -106,6 +122,6 @@ export async function removeBarcode(barcodeId: string): Promise<
     revalidatePath('/dashboard/scan')
     return { ok: true }
   } catch (error) {
-    return failure(error)
+    return barcodeSetupFailure(error)
   }
 }

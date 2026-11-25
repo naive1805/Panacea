@@ -4,6 +4,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 import type { Database } from './database.types'
 
 export async function updateSession(request: NextRequest) {
+  // Preserve the protected page the reader originally requested. The
+  // dashboard layout uses this when sending an unauthenticated reader to sign
+  // in, so routes such as /dashboard/scan return to the right place.
+  request.headers.set('x-panacea-pathname', request.nextUrl.pathname)
+
   let response = NextResponse.next({
     request,
   })

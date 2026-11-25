@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import type { ReactNode } from 'react'
 
 import { AppShell } from '@/components/dashboard/app-shell'
@@ -18,7 +19,12 @@ export default async function DashboardLayout({
   } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/sign-in?next=/dashboard')
+    const requestedPath = (await headers()).get('x-panacea-pathname')
+    const nextPath =
+      requestedPath === '/dashboard' || requestedPath?.startsWith('/dashboard/')
+        ? requestedPath
+        : '/dashboard'
+    redirect(`/sign-in?next=${encodeURIComponent(nextPath)}`)
   }
 
   const now = new Date()
