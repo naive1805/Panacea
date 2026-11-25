@@ -8,6 +8,8 @@ type SignInPageProps = {
   }>
 }
 
+export const metadata = { title: 'Sign in' }
+
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams
   const requestedNext = params?.next

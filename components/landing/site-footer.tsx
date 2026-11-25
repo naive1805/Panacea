@@ -7,6 +7,8 @@ import { primaryNav, routes } from '@/lib/site-config'
 const footerNav = [
   ...primaryNav,
   { label: 'Sign in', href: routes.signIn },
+  { label: 'Privacy', href: routes.privacy },
+  { label: 'Terms', href: routes.terms },
 ]
 
 export function SiteFooter() {

@@ -3,6 +3,8 @@ export const routes = {
   signIn: '/sign-in',
   getStarted: '/get-started',
   dashboard: '/dashboard',
+  privacy: '/privacy',
+  terms: '/terms',
 } as const
 
 export const primaryNav = [

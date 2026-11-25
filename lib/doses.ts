@@ -85,10 +85,10 @@ export function isScheduleActiveOn(schedule: Schedule, date: Date): boolean {
   return today.getTime() >= start.getTime()
 }
 
-export function daysUntil(expiryDate: string): number {
+export function daysUntil(expiryDate: string, now: Date = new Date()): number {
   const target = parseLocalDate(expiryDate)
   target.setHours(0, 0, 0, 0)
-  const today = new Date()
+  const today = new Date(now)
   today.setHours(0, 0, 0, 0)
   return Math.round((target.getTime() - today.getTime()) / 86_400_000)
 }
@@ -101,9 +101,10 @@ export type ExpiryMeta = {
 export function expiryMeta(
   expiryDate: string | null,
   leadDays: number = EXPIRY_WARNING_DAYS,
+  now: Date = new Date(),
 ): ExpiryMeta | null {
   if (!expiryDate) return null
-  const remaining = daysUntil(expiryDate)
+  const remaining = daysUntil(expiryDate, now)
   if (remaining < 0) {
     return { tone: 'danger', label: 'Expired' }
   }

@@ -1,8 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Permit the LAN address used to reach the dev server from another device.
-  // This option applies only to development resources such as HMR.
-  allowedDevOrigins: ['172.16.0.2'],
+  // Set NEXT_ALLOWED_DEV_ORIGIN when accessing the dev server from a LAN device.
+  allowedDevOrigins: process.env.NEXT_ALLOWED_DEV_ORIGIN
+    ? [process.env.NEXT_ALLOWED_DEV_ORIGIN]
+    : [],
   images: {
     unoptimized: true,
   },

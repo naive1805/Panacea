@@ -5,6 +5,8 @@ import { fetchDoseLogHistory } from '@/lib/data/doses'
 import { fetchMedicines } from '@/lib/data/medicines'
 import { requireUserOrRedirect } from '@/lib/server/session'
 
+export const metadata = { title: 'Dose history' }
+
 export default async function HistoryPage() {
   const { supabase, userId } = await requireUserOrRedirect()
 

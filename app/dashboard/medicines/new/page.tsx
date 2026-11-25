@@ -30,6 +30,8 @@ const VALID_FORMS = new Set([
   'other',
 ])
 
+export const metadata = { title: 'Add medicine' }
+
 export default async function NewMedicinePage({ searchParams }: NewMedicinePageProps) {
   const params = await searchParams
 

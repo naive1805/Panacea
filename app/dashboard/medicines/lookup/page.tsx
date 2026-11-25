@@ -5,6 +5,8 @@ import { PageHeader } from '@/components/dashboard/page-header'
 import { MedicineLookup } from '@/components/intelligence/medicine-lookup'
 import { requireUserOrRedirect } from '@/lib/server/session'
 
+export const metadata = { title: 'Look up a medicine' }
+
 export default async function MedicineLookupPage() {
   await requireUserOrRedirect()
 

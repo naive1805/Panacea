@@ -50,6 +50,6 @@ export function failure(error: unknown): { ok: false; error: string } {
   if (error instanceof ActionError) {
     return { ok: false, error: error.message }
   }
-  const message = error instanceof Error ? error.message : 'Something went wrong.'
-  return { ok: false, error: message }
+  console.error('Server action failed:', error)
+  return { ok: false, error: 'Something went wrong. Please try again.' }
 }

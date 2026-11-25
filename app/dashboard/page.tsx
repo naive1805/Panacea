@@ -5,6 +5,8 @@ import { fetchNotificationPrefs } from '@/lib/data/prefs'
 import { daysUntil } from '@/lib/doses'
 import { requireUserOrRedirect } from '@/lib/server/session'
 
+export const metadata = { title: 'Today' }
+
 export default async function TodayPage() {
   const { supabase, userId } = await requireUserOrRedirect()
 

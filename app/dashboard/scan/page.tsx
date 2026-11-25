@@ -5,6 +5,8 @@ import { fetchMedicineBarcodes } from '@/lib/data/barcodes'
 import { fetchMedicines } from '@/lib/data/medicines'
 import { requireUserOrRedirect } from '@/lib/server/session'
 
+export const metadata = { title: 'Scan a barcode' }
+
 export default async function ScanPage() {
   const { supabase, userId } = await requireUserOrRedirect()
   const [barcodes, medicines] = await Promise.all([

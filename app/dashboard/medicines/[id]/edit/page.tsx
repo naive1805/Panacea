@@ -10,6 +10,8 @@ type EditMedicinePageProps = {
   params: Promise<{ id: string }>
 }
 
+export const metadata = { title: 'Edit medicine' }
+
 export default async function EditMedicinePage({ params }: EditMedicinePageProps) {
   const { id } = await params
   const { supabase, userId } = await requireUserOrRedirect()

@@ -389,7 +389,12 @@ export interface Database {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      update_medicine_with_schedules: {
+        Args: { p_medicine_id: string; p_medicine: Json; p_schedules: Json }
+        Returns: Database['public']['Tables']['medicines']['Row'][]
+      }
+    }
     Enums: Record<string, never>
     CompositeTypes: Record<string, never>
   }

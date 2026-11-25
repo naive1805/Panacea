@@ -27,9 +27,11 @@ on conflict (user_id, barcode) do nothing;
 
 alter table public.medicine_barcodes enable row level security;
 
+drop policy if exists "medicine_barcodes_select_own" on public.medicine_barcodes;
 create policy "medicine_barcodes_select_own" on public.medicine_barcodes
   for select using (auth.uid() = user_id);
 
+drop policy if exists "medicine_barcodes_insert_own" on public.medicine_barcodes;
 create policy "medicine_barcodes_insert_own" on public.medicine_barcodes
   for insert with check (
     auth.uid() = user_id
@@ -43,6 +45,7 @@ create policy "medicine_barcodes_insert_own" on public.medicine_barcodes
     )
   );
 
+drop policy if exists "medicine_barcodes_update_own" on public.medicine_barcodes;
 create policy "medicine_barcodes_update_own" on public.medicine_barcodes
   for update using (auth.uid() = user_id) with check (
     auth.uid() = user_id
@@ -56,5 +59,6 @@ create policy "medicine_barcodes_update_own" on public.medicine_barcodes
     )
   );
 
+drop policy if exists "medicine_barcodes_delete_own" on public.medicine_barcodes;
 create policy "medicine_barcodes_delete_own" on public.medicine_barcodes
   for delete using (auth.uid() = user_id);

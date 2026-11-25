@@ -1,66 +1,74 @@
 # Panacea
 
-A calm digital medicine library — keep your medicines, schedules, reminders, and
-medication information organized in one place. Built with Next.js (App Router),
-Tailwind CSS, and Supabase.
+Panacea is a medication organizer built with Next.js, React, Tailwind CSS, and Supabase. It keeps a personal medicine library, schedules, dose history, barcode register, and medicine reference information together.
 
-## What is here
+[Open the live demo](https://panacea-neon.vercel.app)
 
-- **Medicine library** — a bookshelf of your medicines, with add/edit, detail
-  pages, spine colours, and archive/restore.
-- **Schedules & dose tracking** — reading hours per medicine, a Today board with
-  mark-as-taken / snooze / skip, and an undo.
-- **History** — every recorded dose, grouped by day.
-- **Expiry warnings** — medicines flagged as they approach their expiry date.
-- **Reminders** — browser notifications while Panacea is open, with per-account
-  preferences. Server-side delivery (email/push) is not configured yet.
-- **Barcode scanning** — camera scanning with ZXing and manual entry. Scanned
-  codes are saved to a private barcode register and can be assigned to medicines
-  in the library. No barcode-to-medicine lookup is guessed automatically.
-- **Auth** — Supabase email/password with email confirmation, cookie sessions
-  refreshed in `proxy.ts`, and row-level security on every table.
+![Panacea branded preview](public/open-graph.svg)
+
+## Features
+
+- Medicine library with add/edit, archive, expiry dates, and provider-linked details.
+- Dose schedules, history, reminders while the browser is open, and undo.
+- Camera barcode scanning and a private register for later manual assignment.
+- Allergy records and ingredient comparisons; medicine information is educational and can be incomplete.
+- Per-account data access through Supabase Row Level Security.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  Browser[Next.js app] --> Actions[Server actions]
+  Actions --> Supabase[Supabase Auth + Postgres RLS]
+  Actions --> DrugDB[drugdb.in]
+  Actions --> RxNorm[NIH RxNorm / DailyMed fallback]
+  Browser --> Analytics[Vercel Analytics]
+```
+
+Barcode decoding runs in the browser with ZXing. Only a decoded value is sent to the server when the user saves a scan. Medicine lookup requests pass through authenticated server actions; successful reference data may be kept in the shared medicine cache.
 
 ## Setup
 
-1. Install dependencies:
+1. Install dependencies with `pnpm install`.
+2. Create a Supabase project and apply migrations in `supabase/migrations/` in order.
+3. Copy `.env.example` to `.env.local` and configure the required values.
+4. Start locally with `pnpm dev` and open [http://localhost:3000](http://localhost:3000).
 
-   ```bash
-   pnpm install
-   ```
+## Environment variables
 
-2. Create a Supabase project, then apply the SQL migrations in
-   `supabase/migrations/` in filename order (or run `supabase db push`). These
-   create the app tables, barcode register, and row-level security policies.
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL, exposed to the browser |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Yes | Supabase publishable key, protected by RLS |
+| `SUPABASE_SECRET_KEY` | For shared cache writes | Server-only Supabase key; never expose with a `NEXT_PUBLIC_` prefix |
+| `NEXT_PUBLIC_SITE_URL` | Recommended | Canonical URL used for metadata and sitemap |
+| `NEXT_ALLOWED_DEV_ORIGIN` | Optional, development only | LAN host allowed for Next.js dev resources/HMR, such as a private IP address |
+| `HEALTHPILOT_BASE_URL` | Optional | drugdb.in-compatible medicine information endpoint |
+| `HEALTHPILOT_API_KEY` | Optional | Provider key when using a configured compatible endpoint |
+| `NLM_API_CONTACT` | Optional | Contact value for NIH API requests |
 
-3. Copy the environment file and fill it in:
+## Development checks
 
-   ```bash
-   cp .env.example .env.local
-   ```
+| Command | Purpose |
+| --- | --- |
+| `pnpm lint` | ESLint |
+| `pnpm typecheck` | TypeScript check |
+| `pnpm test` | Vitest unit tests |
+| `pnpm build` | Production build |
 
-4. Run the dev server:
+GitHub Actions runs all four checks on pushes and pull requests.
 
-   ```bash
-   pnpm dev
-   ```
+## Known limitations
 
-Open [http://localhost:3000](http://localhost:3000).
+- A barcode identifies a package code only; Panacea does not infer a medicine from it. Scans are stored for manual assignment.
+- Browser reminders require the site to remain open and browser notifications to be permitted. Server-side delivery is not configured.
+- Provider coverage varies. Medicine information, allergy comparisons, and food guidance can be incomplete and should be confirmed with a pharmacist or clinician.
+- The app is not a diagnostic, prescribing, or emergency service.
 
-## Scripts
+## Privacy and terms
 
-| Command            | What it does                     |
-| ------------------ | -------------------------------- |
-| `pnpm dev`         | Start the dev server             |
-| `pnpm build`       | Production build                 |
-| `pnpm start`       | Serve the production build       |
-| `pnpm lint`        | ESLint (Next.js + TypeScript)    |
-| `pnpm typecheck`   | TypeScript, no emit              |
+See the in-app [Privacy notice](https://panacea-neon.vercel.app/privacy) and [Terms of use](https://panacea-neon.vercel.app/terms). The policy text is general and should be reviewed for the deployment’s actual jurisdiction and practices.
 
-## Notes
+## License
 
-- Panacea is an organizational tool. It does not provide medical advice, and it
-  never fabricates medication information or interactions.
-- Dose times are wall-clock times read in the device's timezone.
-
-This repository originated from a [v0](https://v0.app) project:
-<https://v0.app/chat/projects/prj_Xj66zLC7pVfL4neA2ApG0pN68tX5>
+MIT. See [LICENSE](LICENSE).

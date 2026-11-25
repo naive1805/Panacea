@@ -6,7 +6,6 @@ import { resolveLibraryMedicineDetail } from '@/lib/actions/medicine-info'
 import type { Allergy } from '@/lib/types'
 
 type MedicineIntelligenceProps = {
-  medicineId: string
   name: string
   strength: string | null
   providerRef: string | null
@@ -28,7 +27,7 @@ function findAllergyMatches(
     for (const ingredient of ingredients) {
       const b = normalize(ingredient.name)
       if (!b) continue
-      if (a === b || a.includes(b) || b.includes(a)) {
+      if (a.length >= 3 && b.length >= 3 && (a === b || ` ${a} `.includes(` ${b} `) || ` ${b} `.includes(` ${a} `))) {
         matches.push({ allergy: allergy.name, ingredient: ingredient.name })
         break
       }
@@ -53,13 +52,11 @@ function findAllergyMatches(
  *   lookup hint instead.
  */
 export async function MedicineIntelligence({
-  medicineId: _medicineId,
   name,
   strength,
   providerRef,
   allergies,
 }: MedicineIntelligenceProps) {
-  void _medicineId
   const detail = await resolveLibraryMedicineDetail({ name, strength, providerRef })
 
   if (!detail) {

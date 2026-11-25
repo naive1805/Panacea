@@ -1,6 +1,8 @@
 import { AuthShell } from '@/components/auth/auth-shell'
 import { SignUpForm } from '@/components/auth/sign-up-form'
 
+export const metadata = { title: 'Get started' }
+
 export default function GetStartedPage() {
   return (
     <AuthShell

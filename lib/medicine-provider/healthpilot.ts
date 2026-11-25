@@ -66,6 +66,9 @@ type SearchSummaryRow = {
   substanceIdentifier?: string
   brand?: { brandName?: string; brandSctid?: string } | string
   'brand.brandName'?: string
+  'generic.sctid'?: string
+  'genericDetail.genericSctid'?: string
+  licenseStatus?: string
   manufacturer?: { manufacturerName?: string } | string
   'manufacturer.manufacturerName'?: string
   doseForm?: string
@@ -432,21 +435,18 @@ export const healthPilotProvider: MedicineInfoProvider = {
         const hit = searchData?.results?.[0]
         if (hit?.medicineSctid) {
           const inline = hit.genericDetail
-          const genericSctid =
-            (hit as unknown as Record<string, string>)['generic.sctid'] ??
-            (hit as unknown as Record<string, string>)['genericDetail.genericSctid']
-          void genericSctid
+          const genericSctid = inline?.genericSctid ?? hit['generic.sctid'] ?? hit['genericDetail.genericSctid']
           const med: MedicineDisRow = {
             medicineName: hit.medicineName,
             medicineSctid: hit.medicineSctid,
-            brand: { name: (hit as unknown as Record<string, string>)['brand.brandName'] },
+            brand: { name: (typeof hit.brand === 'object' ? hit.brand.brandName : undefined) ?? hit['brand.brandName'] },
             manufacturer: {
-              manufacturerName: (hit as unknown as Record<string, string>)['manufacturer.manufacturerName'],
+              manufacturerName: (typeof hit.manufacturer === 'object' ? hit.manufacturer.manufacturerName : undefined) ?? hit['manufacturer.manufacturerName'],
             },
-            licenseStatus: (hit as unknown as Record<string, string>)['licenseStatus'] ?? null,
+            licenseStatus: hit.licenseStatus,
             generic: inline
               ? {
-                  sctid: inline.genericSctid,
+                  sctid: genericSctid,
                   genericName: inline.name,
                 }
               : undefined,
@@ -454,10 +454,10 @@ export const healthPilotProvider: MedicineInfoProvider = {
           let generic: GenericDisRow | null = null
           if (inline) {
             generic = {
-              genericSctid: inline.genericSctid,
-              indications: (inline as unknown as Record<string, string>).indications,
-              contraIndications: (inline as unknown as Record<string, string>).contraIndications,
-              interaction_with_drugs: (inline as unknown as Record<string, string>).interaction_with_drugs,
+              genericSctid,
+              indications: inline.indications,
+              contraIndications: inline.contraIndications,
+              interaction_with_drugs: inline.interaction_with_drugs,
               doseForm: inline.doseForm,
               routeOfAdministration: inline.routeOfAdministration,
               composition: inline.composition,

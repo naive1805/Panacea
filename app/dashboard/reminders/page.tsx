@@ -3,6 +3,8 @@ import { ReminderSettings } from '@/components/reminders/reminder-settings'
 import { fetchNotificationPrefs } from '@/lib/data/prefs'
 import { requireUserOrRedirect } from '@/lib/server/session'
 
+export const metadata = { title: 'Reminders' }
+
 export default async function RemindersPage() {
   const { supabase, userId } = await requireUserOrRedirect()
   const prefs = await fetchNotificationPrefs(supabase, userId)

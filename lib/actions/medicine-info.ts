@@ -170,8 +170,10 @@ async function addMatchedFoodGuidance(
   if (!matches?.ok) return detail
 
   const target = new Set(activeIngredients)
-  for (const match of matches.data.slice(0, 8)) {
-    const response = await nlmProvider.getDetail?.(match.providerRef)
+  const details = await Promise.all(matches.data.slice(0, 8).map(async (match) => {
+    try { return await nlmProvider.getDetail?.(match.providerRef) ?? null } catch { return null }
+  }))
+  for (const response of details) {
     if (!response?.ok || response.data.foodGuidance.confidence === 'unavailable') continue
 
     const candidate = new Set(

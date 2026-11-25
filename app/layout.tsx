@@ -17,11 +17,19 @@ const newsreader = Newsreader({
 })
 
 export const metadata: Metadata = {
-  title: 'Panacea — Medication management, made safer and simpler',
+  title: { default: 'Panacea — Medication management, made simpler', template: '%s | Panacea' },
   description:
     'Keep your medicines, schedules, reminders, and medication information organized in one place.',
-  generator: 'v0.app',
   applicationName: 'Panacea',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://panacea-neon.vercel.app'),
+  openGraph: {
+    title: 'Panacea — Medication management, made simpler',
+    description: 'Keep medicines, schedules, reminders, and medication information organized in one place.',
+    siteName: 'Panacea',
+    type: 'website',
+    images: ['/open-graph.svg'],
+  },
+  icons: { icon: '/favicon.svg' },
 }
 
 export const viewport: Viewport = {
@@ -43,7 +51,16 @@ export default function RootLayout({
     >
       <body className="antialiased">
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
+        {process.env.NODE_ENV === 'production' && (
+          <Analytics beforeSend={(event) => {
+            try {
+              const url = new URL(event.url)
+              return { ...event, url: `${url.origin}${url.pathname}` }
+            } catch {
+              return null
+            }
+          }} />
+        )}
       </body>
     </html>
   )

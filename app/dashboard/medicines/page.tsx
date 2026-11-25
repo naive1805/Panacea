@@ -7,6 +7,8 @@ import { fetchMedicines, fetchSchedules } from '@/lib/data/medicines'
 import { fetchNotificationPrefs } from '@/lib/data/prefs'
 import { requireUserOrRedirect } from '@/lib/server/session'
 
+export const metadata = { title: 'Medicine library' }
+
 export default async function LibraryPage() {
   const { supabase, userId } = await requireUserOrRedirect()
 

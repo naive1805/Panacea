@@ -20,6 +20,8 @@ type MedicineDetailPageProps = {
   params: Promise<{ id: string }>
 }
 
+export const metadata = { title: 'Medicine details' }
+
 export default async function MedicineDetailPage({
   params,
 }: MedicineDetailPageProps) {
@@ -157,7 +159,6 @@ export default async function MedicineDetailPage({
           <AllergyPanel initialAllergies={allergies} loadError={allergyResult.error} />
 
           <MedicineIntelligence
-            medicineId={medicine.id}
             name={medicine.name}
             strength={medicine.strength}
             providerRef={medicine.provider_ref}

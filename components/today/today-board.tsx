@@ -60,6 +60,10 @@ export function TodayBoard({
     () => buildTodayDoses({ schedules, medicines, logs, now }),
     [schedules, medicines, logs, now],
   )
+  const currentExpiringMedicines = useMemo(() => medicines
+    .filter((medicine) => medicine.expiry_date && expiryMeta(medicine.expiry_date, expiryLeadDays, now)?.tone !== 'ok')
+    .sort((a, b) => (a.expiry_date ?? '').localeCompare(b.expiry_date ?? '')),
+  [medicines, expiryLeadDays, now])
 
   const takenCount = doses.filter((dose) => dose.status === 'taken').length
   const next = nextDoseOf(doses)
@@ -191,10 +195,10 @@ export function TodayBoard({
             Expiring soon
           </dt>
           <dd className="font-serif text-3xl font-normal tabular-nums">
-            {expiringMedicines.length}
+            {currentExpiringMedicines.length}
           </dd>
           <dd className="text-xs text-muted-foreground">
-            {expiringMedicines.length === 0
+            {currentExpiringMedicines.length === 0
               ? 'No expiry alerts right now.'
               : 'Worth checking this week.'}
           </dd>
@@ -241,7 +245,7 @@ export function TodayBoard({
 
         <div className="flex flex-col gap-5 lg:col-span-2">
           <NextDoseCard dose={next} onTaken={() => next && markTaken(next)} pending={pending === `taken-${next?.key}`} />
-          <ExpiryCard medicines={expiringMedicines} leadDays={expiryLeadDays} />
+          <ExpiryCard medicines={clientNow ? currentExpiringMedicines : expiringMedicines} leadDays={expiryLeadDays} />
         </div>
       </div>
     </div>

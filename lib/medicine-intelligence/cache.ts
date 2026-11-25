@@ -41,7 +41,18 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function asForm(value: string | null): MedicineForm | null {
-  return value && FORMS.has(value) ? (value as MedicineForm) : null
+  return value && FORMS.has(value)
+    ? MEDICINE_FORMS.find((form) => form.value === value)?.value ?? null
+    : null
+}
+
+function toJson(value: unknown): Json {
+  if (value === null || typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return value
+  if (Array.isArray(value)) return value.map(toJson)
+  if (typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, toJson(item)]))
+  }
+  return null
 }
 
 function asConfidence(value: string): InfoConfidence {
@@ -95,18 +106,18 @@ export function toMedicineDetail(row: CacheRow): MedicineDetail {
     name: row.name,
     genericName: row.generic_name,
     brandName: row.brand_name,
-    manufacturer: (row as { manufacturer?: string | null }).manufacturer ?? null,
-    licenseStatus: (row as { license_status?: string | null }).license_status ?? null,
+    manufacturer: row.manufacturer,
+    licenseStatus: row.license_status,
     form: asForm(row.form),
     strength: row.strength,
-    route: (row as { route?: string | null }).route ?? null,
+    route: row.route,
     ingredients: asIngredients(row.ingredients),
     ingredientsConfidence: asConfidence(row.ingredients_confidence),
     uses: asSection(row.uses),
     administration: asSection(row.administration),
     sideEffects: asSection(row.side_effects),
     warnings: asSection(row.warnings),
-    interactions: asSection((row as { interactions?: Json | null }).interactions ?? null),
+    interactions: asSection(row.interactions),
     foodGuidance: asSection(row.food_guidance),
     sources: asSources(row.sources),
     retrievedAt: row.retrieved_at,
@@ -130,15 +141,15 @@ export function toCacheInsert(
     form: detail.form,
     strength: detail.strength,
     route: detail.route,
-    ingredients: detail.ingredients as unknown as Json,
+    ingredients: toJson(detail.ingredients),
     ingredients_confidence: detail.ingredientsConfidence,
-    uses: detail.uses as unknown as Json,
-    administration: detail.administration as unknown as Json,
-    side_effects: detail.sideEffects as unknown as Json,
-    warnings: detail.warnings as unknown as Json,
-    interactions: detail.interactions as unknown as Json,
-    food_guidance: detail.foodGuidance as unknown as Json,
-    sources: detail.sources as unknown as Json,
+    uses: toJson(detail.uses),
+    administration: toJson(detail.administration),
+    side_effects: toJson(detail.sideEffects),
+    warnings: toJson(detail.warnings),
+    interactions: toJson(detail.interactions),
+    food_guidance: toJson(detail.foodGuidance),
+    sources: toJson(detail.sources),
     retrieved_at: detail.retrievedAt,
     expires_at: expiresAt,
   }
