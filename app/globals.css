@@ -1,0 +1,255 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-destructive: var(--destructive);
+  --color-destructive-soft: var(--destructive-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --color-parchment: var(--parchment);
+  --color-parchment-deep: var(--parchment-deep);
+  --color-shelf: var(--shelf);
+  --color-shelf-edge: var(--shelf-edge);
+  --color-brass: var(--brass);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.25);
+  --radius-2xl: calc(var(--radius) * 1.5);
+  --radius-3xl: calc(var(--radius) * 2);
+  --radius-4xl: calc(var(--radius) * 2.5);
+
+  --shadow-subtle: 0 1px 2px 0 oklch(0.25 0.01 75 / 0.04);
+  --shadow-raised: 0 1px 2px 0 oklch(0.25 0.01 75 / 0.04),
+    0 12px 32px -12px oklch(0.25 0.01 75 / 0.12);
+}
+
+/*
+ * Panacea palette
+ * Warm off-white canvas, charcoal ink, a single restrained teal-green accent.
+ * Status colours (success / warning / destructive) are muted and reserved for state.
+ */
+:root {
+  color-scheme: light;
+  --background: oklch(0.982 0.005 85);
+  --surface: oklch(0.966 0.007 85);
+  --foreground: oklch(0.235 0.008 75);
+  --card: oklch(0.995 0.002 85);
+  --card-foreground: oklch(0.235 0.008 75);
+  --popover: oklch(0.995 0.002 85);
+  --popover-foreground: oklch(0.235 0.008 75);
+  --primary: oklch(0.47 0.068 172);
+  --primary-foreground: oklch(0.985 0.004 85);
+  --secondary: oklch(0.945 0.008 85);
+  --secondary-foreground: oklch(0.235 0.008 75);
+  --muted: oklch(0.95 0.007 85);
+  --muted-foreground: oklch(0.49 0.012 75);
+  --accent: oklch(0.948 0.022 172);
+  --accent-foreground: oklch(0.38 0.06 172);
+  --success: oklch(0.47 0.068 160);
+  --success-soft: oklch(0.948 0.025 160);
+  --warning: oklch(0.52 0.1 65);
+  --warning-soft: oklch(0.955 0.035 80);
+  --destructive: oklch(0.52 0.15 28);
+  --destructive-soft: oklch(0.955 0.025 28);
+  --border: oklch(0.905 0.008 80);
+  --border-strong: oklch(0.84 0.01 80);
+  --input: oklch(0.87 0.009 80);
+  --ring: oklch(0.47 0.068 172);
+  --chart-1: oklch(0.47 0.068 172);
+  --chart-2: oklch(0.62 0.05 172);
+  --chart-3: oklch(0.52 0.1 65);
+  --chart-4: oklch(0.49 0.012 75);
+  --chart-5: oklch(0.235 0.008 75);
+  --parchment: oklch(0.975 0.014 88);
+  --parchment-deep: oklch(0.928 0.02 85);
+  --shelf: oklch(0.735 0.045 62);
+  --shelf-edge: oklch(0.53 0.05 58);
+  --brass: oklch(0.66 0.085 78);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.972 0.006 85);
+  --sidebar-foreground: oklch(0.235 0.008 75);
+  --sidebar-primary: oklch(0.47 0.068 172);
+  --sidebar-primary-foreground: oklch(0.985 0.004 85);
+  --sidebar-accent: oklch(0.948 0.022 172);
+  --sidebar-accent-foreground: oklch(0.38 0.06 172);
+  --sidebar-border: oklch(0.905 0.008 80);
+  --sidebar-ring: oklch(0.47 0.068 172);
+}
+
+.dark {
+  color-scheme: dark;
+  --background: oklch(0.2 0.006 75);
+  --surface: oklch(0.225 0.006 75);
+  --foreground: oklch(0.94 0.006 85);
+  --card: oklch(0.24 0.006 75);
+  --card-foreground: oklch(0.94 0.006 85);
+  --popover: oklch(0.24 0.006 75);
+  --popover-foreground: oklch(0.94 0.006 85);
+  --primary: oklch(0.7 0.075 172);
+  --primary-foreground: oklch(0.2 0.006 75);
+  --secondary: oklch(0.28 0.006 75);
+  --secondary-foreground: oklch(0.94 0.006 85);
+  --muted: oklch(0.28 0.006 75);
+  --muted-foreground: oklch(0.7 0.01 80);
+  --accent: oklch(0.3 0.03 172);
+  --accent-foreground: oklch(0.85 0.05 172);
+  --success: oklch(0.72 0.08 160);
+  --success-soft: oklch(0.3 0.03 160);
+  --warning: oklch(0.78 0.1 75);
+  --warning-soft: oklch(0.3 0.04 75);
+  --destructive: oklch(0.7 0.14 28);
+  --destructive-soft: oklch(0.3 0.04 28);
+  --border: oklch(1 0 0 / 9%);
+  --border-strong: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.7 0.075 172);
+  --sidebar: oklch(0.22 0.006 75);
+  --sidebar-foreground: oklch(0.94 0.006 85);
+  --sidebar-primary: oklch(0.7 0.075 172);
+  --sidebar-primary-foreground: oklch(0.2 0.006 75);
+  --sidebar-accent: oklch(0.3 0.03 172);
+  --sidebar-accent-foreground: oklch(0.85 0.05 172);
+  --sidebar-border: oklch(1 0 0 / 9%);
+  --sidebar-ring: oklch(0.7 0.075 172);
+  --parchment: oklch(0.27 0.012 85);
+  --parchment-deep: oklch(0.225 0.012 85);
+  --shelf: oklch(0.33 0.025 58);
+  --shelf-edge: oklch(0.19 0.02 58);
+  --brass: oklch(0.75 0.08 80);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-behavior: smooth;
+    scroll-padding-top: 5rem;
+  }
+  body {
+    @apply bg-background font-sans text-foreground;
+    font-feature-settings: 'ss01', 'cv11';
+  }
+  ::selection {
+    @apply bg-accent text-accent-foreground;
+  }
+}
+
+@layer components {
+  /*
+   * The warm parchment canvas behind the library: an off-white wash with a
+   * barely-there paper grain, so pages feel printed rather than flat.
+   */
+  .library-canvas {
+    background-color: var(--background);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+
+  /*
+   * A volume's cover: warm parchment with a faint brass sheen along the top,
+   * and a subtle page-edge along the outer margin.
+   */
+  .book-cover {
+    background-color: var(--parchment);
+    background-image:
+      linear-gradient(
+        180deg,
+        color-mix(in oklab, var(--brass) 11%, var(--parchment)) 0%,
+        var(--parchment) 26%,
+        var(--parchment) 100%
+      ),
+      linear-gradient(
+        90deg,
+        transparent 0,
+        transparent calc(100% - 5px),
+        color-mix(in oklab, var(--shelf) 28%, var(--parchment)) calc(100% - 5px),
+        color-mix(in oklab, var(--shelf) 46%, var(--parchment)) 100%
+      );
+  }
+
+  /* The coloured spine strip. Set --spine to the medicine's ink. */
+  .book-spine {
+    background-color: var(--spine);
+    background-image: linear-gradient(
+      90deg,
+      rgb(255 255 255 / 0.34) 0%,
+      rgb(255 255 255 / 0) 42%,
+      rgb(0 0 0 / 0.26) 100%
+    );
+    box-shadow: inset -1px 0 0 rgb(0 0 0 / 0.3);
+  }
+
+  /*
+   * The full shelf: books sit on repeating planks with a soft shadow beneath.
+   * Tuned to a 15rem book and a 2rem row gap, so the planks line up under
+   * every row at any width.
+   */
+  .library-shelf-grid {
+    background-image: repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 15rem,
+        var(--shelf) 15rem,
+        var(--shelf) 15.5rem,
+        var(--shelf-edge) 15.5rem,
+        var(--shelf-edge) 15.78rem,
+        rgb(0 0 0 / 0.07) 15.78rem,
+        transparent 16rem,
+        transparent 17rem
+      );
+  }
+
+  /* A single plank beneath a horizontal collection row. */
+  .library-shelf-plank {
+    background-image: linear-gradient(
+      to bottom,
+      var(--shelf) 0%,
+      var(--shelf) 60%,
+      var(--shelf-edge) 60%,
+      var(--shelf-edge) 100%
+    );
+  }
+}
