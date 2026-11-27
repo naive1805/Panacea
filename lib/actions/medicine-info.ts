@@ -37,7 +37,14 @@ export async function lookupMedicineByBarcode(
     return signedOut<MedicineInfo>()
   }
 
-  return getMedicineInfoProvider().lookupByBarcode(barcode.trim())
+  const provider = getMedicineInfoProvider()
+  const result = await provider.lookupByBarcode(barcode.trim())
+  if (result.ok) return result
+
+  // The active India-focused catalog does not support barcode lookups. Try
+  // the NLM provider, which resolves U.S. NDC-backed barcodes through RxNorm.
+  const fallback = await nlmProvider.lookupByBarcode(barcode.trim())
+  return fallback.ok ? fallback : result
 }
 
 export async function searchMedicines(

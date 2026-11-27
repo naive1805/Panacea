@@ -4,17 +4,21 @@ import {
   BrowserMultiFormatReader,
   type IScannerControls,
 } from '@zxing/browser'
-import { AlertCircle, Camera, CameraOff, Check, Keyboard, ScanBarcode } from 'lucide-react'
+import { AlertCircle, ArrowRight, Camera, CameraOff, Check, Keyboard, ScanBarcode } from 'lucide-react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 
 import { saveScannedBarcode } from '@/lib/actions/barcodes'
+import { lookupMedicineByBarcode } from '@/lib/actions/medicine-info'
 
 type ScannerState =
   | { phase: 'idle' }
   | { phase: 'starting' }
   | { phase: 'scanning' }
   | { phase: 'saving'; code: string }
+  | { phase: 'checking'; code: string; duplicate: boolean }
+  | { phase: 'matched'; code: string; duplicate: boolean; name: string; strength: string | null; form: string | null }
   | { phase: 'saved'; code: string; duplicate: boolean }
   | { phase: 'error'; message: string }
 
@@ -48,7 +52,18 @@ export function Scanner() {
           setState({ phase: 'error', message: result.error })
           return
         }
-        setState({ phase: 'saved', code, duplicate: result.duplicate })
+        setState({ phase: 'checking', code, duplicate: result.duplicate })
+        const lookup = await lookupMedicineByBarcode(code).catch(() => null)
+        setState(lookup?.ok
+          ? {
+              phase: 'matched',
+              code,
+              duplicate: result.duplicate,
+              name: lookup.data.name,
+              strength: lookup.data.strength,
+              form: lookup.data.form,
+            }
+          : { phase: 'saved', code, duplicate: result.duplicate })
         setManual('')
         router.refresh()
       } catch {
@@ -134,7 +149,7 @@ export function Scanner() {
   }
 
   const scanning = state.phase === 'scanning'
-  const cameraUnavailable = state.phase === 'idle' || state.phase === 'starting' || state.phase === 'error' || state.phase === 'saved'
+  const cameraUnavailable = state.phase === 'idle' || state.phase === 'starting' || state.phase === 'checking' || state.phase === 'error' || state.phase === 'saved' || state.phase === 'matched'
 
   return (
     <div className="flex flex-col gap-8">
@@ -200,21 +215,43 @@ export function Scanner() {
                     {state.duplicate ? 'This barcode is already in your register.' : 'Barcode saved to your register.'}
                     <span className="font-medium text-white">{state.code}</span>
                   </p>
+                ) : state.phase === 'matched' ? (
+                  <div role="status" className="flex flex-col items-center gap-1">
+                    <p className="inline-flex items-center gap-2">
+                      <Check className="size-4 text-success" />
+                      {state.duplicate ? 'Barcode already saved.' : 'Barcode saved.'}
+                    </p>
+                    <p className="font-medium text-white">{state.name}{state.strength ? ` · ${state.strength}` : ''}</p>
+                    <p className="text-xs text-white/70">Found in the medicine reference. Check the details before adding it to your shelf.</p>
+                  </div>
+                ) : state.phase === 'checking' ? (
+                  'Barcode saved. Checking the medicine reference…'
                 ) : state.phase === 'starting' ? (
                   'Opening the camera…'
                 ) : (
                   'Camera is off. Start scanning or enter the number printed below the bars.'
                 )}
               </div>
-              <button
-                type="button"
-                onClick={() => void startCamera()}
-                disabled={state.phase === 'starting'}
-                className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
-              >
-                <ScanBarcode className="size-4" />
-                {state.phase === 'starting' ? 'Starting…' : state.phase === 'error' ? 'Try camera again' : 'Start camera'}
-              </button>
+              {state.phase === 'checking' ? (
+                <p role="status" className="text-xs text-white/70">Checking medicine catalog…</p>
+              ) : state.phase === 'matched' ? (
+                <Link
+                  href={`/dashboard/medicines/new?${new URLSearchParams({ from: 'scan-match', barcode: state.code, name: state.name, strength: state.strength ?? '', form: state.form ?? '' }).toString()}`}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Review and shelf medicine <ArrowRight className="size-4" />
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void startCamera()}
+                  disabled={state.phase === 'starting'}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-50"
+                >
+                  <ScanBarcode className="size-4" />
+                  {state.phase === 'starting' ? 'Starting…' : state.phase === 'error' ? 'Try camera again' : 'Start camera'}
+                </button>
+              )}
             </div>
           ) : null}
 

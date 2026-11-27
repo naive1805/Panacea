@@ -54,6 +54,7 @@ export default async function NewMedicinePage({ searchParams }: NewMedicinePageP
     params?.mode === 'manual' ||
       params?.from === 'scan' ||
       params?.from === 'lookup' ||
+      params?.from === 'scan-match' ||
       params?.name ||
       params?.strength ||
       params?.barcode,
@@ -103,6 +104,12 @@ export default async function NewMedicinePage({ searchParams }: NewMedicinePageP
         <p className="mt-8 rounded-md border border-success/25 bg-success-soft px-4 py-3 text-sm leading-6 text-success">
           Details below are prefilled from drugdb.in. Check them against your
           pack before shelving — strengths and brands with similar names exist.
+        </p>
+      ) : null}
+
+      {params?.from === 'scan-match' && params.barcode ? (
+        <p className="mt-8 rounded-md border border-success/25 bg-success-soft px-4 py-3 text-sm leading-6 text-success">
+          The barcode matched a medicine reference. Verify the name and strength against the pack, then save it to your shelf.
         </p>
       ) : null}
 
