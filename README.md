@@ -34,6 +34,13 @@ Barcode decoding runs in the browser with ZXing. Only a decoded value is sent to
 3. Copy `.env.example` to `.env.local` and configure the required values.
 4. Start locally with `pnpm dev` and open [http://localhost:3000](http://localhost:3000).
 
+For deployed email confirmation, set `NEXT_PUBLIC_SITE_URL` to the production
+origin and add `${NEXT_PUBLIC_SITE_URL}/auth/confirm` to Supabase Auth's allowed
+redirect URLs. The Supabase Site URL should also be the production origin. If
+the confirmation email template is customized, it must preserve Supabase's
+confirmation URL or use its redirect-to value so the `/auth/confirm` callback
+is reached.
+
 ## Environment variables
 
 | Variable | Required | Purpose |

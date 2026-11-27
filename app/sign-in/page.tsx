@@ -4,6 +4,7 @@ import { SignInForm } from '@/components/auth/sign-in-form'
 type SignInPageProps = {
   searchParams?: Promise<{
     confirmed?: string
+    confirmation?: string
     next?: string
   }>
 }
@@ -20,6 +21,8 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const initialMessage =
     params?.confirmed === 'true'
       ? 'Your email is confirmed. You can sign in now.'
+      : params?.confirmation === 'failed'
+        ? 'This confirmation link may be expired or invalid. Request a new email and try again. If the problem continues, the site owner should check the Supabase Auth redirect URL settings.'
       : undefined
 
   return (

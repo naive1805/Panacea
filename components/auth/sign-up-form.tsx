@@ -13,6 +13,29 @@ import {
 } from '@/components/ui/field'
 import { createClient } from '@/lib/supabase/client'
 
+function emailConfirmationRedirect(): string {
+  const currentOrigin = window.location.origin
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim()
+
+  if (process.env.NODE_ENV === 'production' && configuredSiteUrl) {
+    try {
+      const configured = new URL(configuredSiteUrl)
+      const localHosts = new Set(['localhost', '127.0.0.1', '::1'])
+      if (!localHosts.has(configured.hostname)) {
+        const callback = new URL('/auth/confirm', configured.origin)
+        callback.searchParams.set('next', '/dashboard')
+        return callback.toString()
+      }
+    } catch {
+      // Fall back to the origin serving the sign-up form if the env value is invalid.
+    }
+  }
+
+  const callback = new URL('/auth/confirm', currentOrigin)
+  callback.searchParams.set('next', '/dashboard')
+  return callback.toString()
+}
+
 export function SignUpForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -60,7 +83,7 @@ export function SignUpForm() {
         data: {
           full_name: trimmedName,
         },
-        emailRedirectTo: `${window.location.origin}/auth/confirm?next=/dashboard`,
+        emailRedirectTo: emailConfirmationRedirect(),
       },
     })
 

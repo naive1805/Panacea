@@ -8,7 +8,10 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
   const tokenHash = requestUrl.searchParams.get('token_hash')
   const type = requestUrl.searchParams.get('type') as EmailOtpType | null
-  const next = requestUrl.searchParams.get('next') || '/dashboard'
+  const requestedNext = requestUrl.searchParams.get('next')
+  const next = requestedNext?.startsWith('/') && !requestedNext.startsWith('//') && !requestedNext.includes('\\')
+    ? requestedNext
+    : '/dashboard'
   const supabase = await createClient()
 
   if (code) {
@@ -30,5 +33,7 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(new URL('/sign-in', request.url))
+  return NextResponse.redirect(
+    new URL('/sign-in?confirmation=failed', requestUrl.origin),
+  )
 }
