@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  BarcodeFormat,
   BrowserMultiFormatReader,
   type IScannerControls,
 } from '@zxing/browser'
@@ -118,7 +119,19 @@ export function Scanner() {
     }
 
     try {
-      const reader = new BrowserMultiFormatReader()
+      const reader = new BrowserMultiFormatReader(undefined, {
+        delayBetweenScanAttempts: 250,
+      })
+      reader.possibleFormats = [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.EAN_8,
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+        BarcodeFormat.CODE_128,
+        BarcodeFormat.ITF,
+        BarcodeFormat.DATA_MATRIX,
+        BarcodeFormat.QR_CODE,
+      ]
       controlsRef.current = await reader.decodeFromConstraints(
         {
           audio: false,
@@ -180,7 +193,7 @@ export function Scanner() {
           <div>
             <h2 className="font-serif text-xl font-normal tracking-tight">Scan a medicine pack</h2>
             <p className="mt-0.5 text-sm text-muted-foreground">
-              Read and save its barcode, then match it to a medicine below.
+              Hold the pack steady with the barcode in focus, then match it to a medicine below.
             </p>
           </div>
           {scanning ? (
@@ -214,11 +227,16 @@ export function Scanner() {
 
           {scanning ? (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-40 w-2/3 max-w-sm rounded-lg border-2 border-white/80">
-                <span className="absolute -top-px -left-px h-6 w-6 border-t-2 border-l-2 border-primary" />
-                <span className="absolute -top-px -right-px h-6 w-6 border-t-2 border-r-2 border-primary" />
-                <span className="absolute -bottom-px -left-px h-6 w-6 border-b-2 border-l-2 border-primary" />
-                <span className="absolute -right-px -bottom-px h-6 w-6 border-r-2 border-b-2 border-primary" />
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative h-40 w-2/3 max-w-sm rounded-lg border-2 border-white/80">
+                  <span className="absolute -top-px -left-px h-6 w-6 border-t-2 border-l-2 border-primary" />
+                  <span className="absolute -top-px -right-px h-6 w-6 border-t-2 border-r-2 border-primary" />
+                  <span className="absolute -bottom-px -left-px h-6 w-6 border-b-2 border-l-2 border-primary" />
+                  <span className="absolute -right-px -bottom-px h-6 w-6 border-r-2 border-b-2 border-primary" />
+                </div>
+                <p className="rounded bg-black/55 px-3 py-1.5 text-xs text-white">
+                  Keep the bars flat, in focus, and free from glare.
+                </p>
               </div>
             </div>
           ) : null}
