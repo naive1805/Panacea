@@ -1,6 +1,6 @@
-import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Geist, Newsreader } from 'next/font/google'
+import { Analytics } from '@/components/analytics'
 import './globals.css'
 
 const geist = Geist({
@@ -51,16 +51,7 @@ export default function RootLayout({
     >
       <body className="antialiased" suppressHydrationWarning>
         {children}
-        {process.env.NODE_ENV === 'production' && (
-          <Analytics beforeSend={(event) => {
-            try {
-              const url = new URL(event.url)
-              return { ...event, url: `${url.origin}${url.pathname}` }
-            } catch {
-              return null
-            }
-          }} />
-        )}
+        {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>
   )
