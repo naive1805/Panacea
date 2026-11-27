@@ -83,8 +83,15 @@ export function Scanner() {
 
     try {
       const reader = new BrowserMultiFormatReader()
-      controlsRef.current = await reader.decodeFromVideoDevice(
-        undefined,
+      controlsRef.current = await reader.decodeFromConstraints(
+        {
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+        },
         video,
         (result) => {
           if (result && !processingRef.current) {
@@ -94,12 +101,23 @@ export function Scanner() {
         },
       )
       setState({ phase: 'scanning' })
-    } catch {
+    } catch (error) {
       stopCamera()
+      const cameraError = error instanceof Error ? error.name : ''
+      const message = cameraError === 'NotAllowedError' || cameraError === 'PermissionDeniedError'
+        ? 'Camera permission is blocked. Allow camera access for this site in your browser settings, then try again.'
+        : cameraError === 'NotFoundError' || cameraError === 'DevicesNotFoundError'
+          ? 'No camera was found on this device. Enter the barcode number below.'
+          : cameraError === 'NotReadableError' || cameraError === 'TrackStartError'
+            ? 'The camera is busy in another app. Close other camera apps or tabs, then try again.'
+            : cameraError === 'OverconstrainedError'
+              ? 'This camera cannot use the requested settings. Try again or enter the barcode below.'
+              : !window.isSecureContext
+                ? 'Camera access requires a secure connection. Open this site over HTTPS or use localhost.'
+                : 'The camera could not be opened. Check site camera permission and close any other app using the camera.'
       setState({
         phase: 'error',
-        message:
-          'The camera could not be opened. Check camera permission and try again, or enter the number below.',
+        message,
       })
     }
   }

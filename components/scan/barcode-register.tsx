@@ -105,9 +105,9 @@ export function BarcodeRegister({ barcodes, medicines }: BarcodeRegisterProps) {
           {visible.map((item) => {
             const busy = busyId === item.id || isPending
             return (
-              <li key={item.id} className="flex flex-col gap-4 px-5 py-4 lg:flex-row lg:items-center">
+              <li key={item.id} className="flex min-w-0 flex-col gap-4 px-5 py-4">
                 <div className="min-w-0 flex-1">
-                  <p className="break-all font-mono text-sm font-medium tabular-nums text-foreground">{item.barcode}</p>
+                  <p className="break-words font-mono text-sm font-medium tabular-nums text-foreground">{item.barcode}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {item.format && item.format !== 'MANUAL' ? item.format.replaceAll('_', ' ') : item.format === 'MANUAL' ? 'Entered manually' : 'Barcode'}
                     {' · '}
@@ -116,7 +116,7 @@ export function BarcodeRegister({ barcodes, medicines }: BarcodeRegisterProps) {
                 </div>
 
                 {item.medicine_id ? (
-                  <span className="inline-flex min-w-0 items-center gap-2 text-sm text-muted-foreground lg:w-64">
+                <span className="inline-flex min-w-0 max-w-full items-center gap-2 text-sm text-muted-foreground">
                     <Link2 className="size-4 shrink-0 text-primary" />
                     <span className="truncate text-foreground">{item.medicine_name ?? 'Medicine in your library'}</span>
                     {item.medicine_strength ? <span className="shrink-0 text-xs">{item.medicine_strength}</span> : null}
