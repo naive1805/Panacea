@@ -40,7 +40,7 @@ type ScannerState =
   | { phase: 'scanning' }
   | { phase: 'saving'; code: string }
   | { phase: 'checking'; code: string; duplicate: boolean }
-  | { phase: 'matched'; code: string; duplicate: boolean; name: string; strength: string | null; form: string | null }
+  | { phase: 'matched'; code: string; duplicate: boolean; medicineId: string | null; name: string; strength: string | null; form: string | null }
   | { phase: 'saved'; code: string; duplicate: boolean }
   | { phase: 'error'; message: string }
 
@@ -74,18 +74,31 @@ export function Scanner() {
           setState({ phase: 'error', message: result.error })
           return
         }
-        setState({ phase: 'checking', code, duplicate: result.duplicate })
-        const lookup = await lookupMedicineByBarcode(code).catch(() => null)
-        setState(lookup?.ok
-          ? {
-              phase: 'matched',
-              code,
-              duplicate: result.duplicate,
-              name: lookup.data.name,
-              strength: lookup.data.strength,
-              form: lookup.data.form,
-            }
-          : { phase: 'saved', code, duplicate: result.duplicate })
+        if (result.medicine) {
+          setState({
+            phase: 'matched',
+            code,
+            duplicate: result.duplicate,
+            medicineId: result.medicine.id,
+            name: result.medicine.name,
+            strength: result.medicine.strength,
+            form: result.medicine.form,
+          })
+        } else {
+          setState({ phase: 'checking', code, duplicate: result.duplicate })
+          const lookup = await lookupMedicineByBarcode(code).catch(() => null)
+          setState(lookup?.ok
+            ? {
+                phase: 'matched',
+                code,
+                duplicate: result.duplicate,
+                medicineId: null,
+                name: lookup.data.name,
+                strength: lookup.data.strength,
+                form: lookup.data.form,
+              }
+            : { phase: 'saved', code, duplicate: result.duplicate })
+        }
         setManual('')
         router.refresh()
       } catch {
@@ -265,7 +278,11 @@ export function Scanner() {
                       {state.duplicate ? 'Barcode already saved.' : 'Barcode saved.'}
                     </p>
                     <p className="font-medium text-white">{state.name}{state.strength ? ` · ${state.strength}` : ''}</p>
-                    <p className="text-xs text-white/70">Found in the medicine reference. Check the details before adding it to your shelf.</p>
+                    <p className="text-xs text-white/70">
+                      {state.medicineId
+                        ? 'This barcode is linked to a medicine you have already shelved.'
+                        : 'Found in the medicine reference. Check the details before adding it to your shelf.'}
+                    </p>
                   </div>
                 ) : state.phase === 'checking' ? (
                   'Barcode saved. Checking the medicine reference…'
@@ -278,12 +295,21 @@ export function Scanner() {
               {state.phase === 'checking' ? (
                 <p role="status" className="text-xs text-white/70">Checking medicine catalog…</p>
               ) : state.phase === 'matched' ? (
-                <Link
-                  href={`/dashboard/medicines/new?${new URLSearchParams({ from: 'scan-match', barcode: state.code, name: state.name, strength: state.strength ?? '', form: state.form ?? '' }).toString()}`}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-                >
-                  Review and shelf medicine <ArrowRight className="size-4" />
-                </Link>
+                state.medicineId ? (
+                  <Link
+                    href={`/dashboard/medicines/${state.medicineId}`}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Open saved medicine <ArrowRight className="size-4" />
+                  </Link>
+                ) : (
+                  <Link
+                    href={`/dashboard/medicines/new?${new URLSearchParams({ from: 'scan-match', barcode: state.code, name: state.name, strength: state.strength ?? '', form: state.form ?? '' }).toString()}`}
+                    className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                  >
+                    Review and shelf medicine <ArrowRight className="size-4" />
+                  </Link>
+                )
               ) : state.phase === 'saved' ? (
                 <Link
                   href={`/dashboard/medicines/new?${new URLSearchParams({ from: 'scan', barcode: state.code }).toString()}`}

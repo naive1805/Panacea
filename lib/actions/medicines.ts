@@ -48,6 +48,36 @@ export async function createMedicine(
       .single()
     if (error) throw error
 
+    const barcode = medicine.value.barcode?.trim()
+    if (barcode) {
+      const { data: savedBarcode, error: barcodeLookupError } = await supabase
+        .from('medicine_barcodes')
+        .select('id, medicine_id')
+        .eq('user_id', userId)
+        .eq('barcode', barcode)
+        .maybeSingle()
+
+      if (!barcodeLookupError) {
+        const barcodeWrite = savedBarcode
+          ? savedBarcode.medicine_id && savedBarcode.medicine_id !== created.id
+            ? null
+            : await supabase
+              .from('medicine_barcodes')
+              .update({ medicine_id: created.id })
+              .eq('id', savedBarcode.id)
+              .eq('user_id', userId)
+          : await supabase.from('medicine_barcodes').insert({
+              user_id: userId,
+              barcode,
+              format: 'MANUAL',
+              medicine_id: created.id,
+            })
+        if (barcodeWrite?.error) console.error('Failed to link medicine barcode.', barcodeWrite.error)
+      } else {
+        console.error('Failed to find medicine barcode record.', barcodeLookupError)
+      }
+    }
+
     if (schedules.value.length > 0) {
       const rows = schedules.value.map((schedule) => ({
         user_id: userId,
@@ -61,6 +91,7 @@ export async function createMedicine(
     }
 
     revalidatePath('/dashboard', 'layout')
+    revalidatePath('/dashboard/scan')
     return { ok: true, data: toMedicine(created) }
   } catch (error) {
     return failure(error)

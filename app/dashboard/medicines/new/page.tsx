@@ -94,9 +94,7 @@ export default async function NewMedicinePage({ searchParams }: NewMedicinePageP
 
       {params?.from === 'scan' && params.barcode ? (
         <p className="mt-8 rounded-md border border-warning/25 bg-warning-soft px-4 py-3 text-sm leading-6 text-warning">
-          Barcode <span className="font-medium tabular-nums">{params.barcode}</span>{' '}
-          is saved with this medicine. It could not be matched to a medicine
-          record, so nothing was guessed — finish the entry by hand.
+          Barcode <span className="font-medium tabular-nums">{params.barcode}</span> was read, but no catalog match was found. Enter the details once; Panacea will link this barcode to this entry for future scans.
         </p>
       ) : null}
 
