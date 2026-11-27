@@ -49,7 +49,7 @@ export default function RootLayout({
       lang="en"
       className={`${geist.variable} ${newsreader.variable} bg-background`}
     >
-      <body className="antialiased">
+      <body className="antialiased" suppressHydrationWarning>
         {children}
         {process.env.NODE_ENV === 'production' && (
           <Analytics beforeSend={(event) => {

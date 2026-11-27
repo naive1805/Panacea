@@ -111,7 +111,10 @@ export function BarcodeRegister({ barcodes, medicines }: BarcodeRegisterProps) {
                   <p className="mt-1 text-xs text-muted-foreground">
                     {item.format && item.format !== 'MANUAL' ? item.format.replaceAll('_', ' ') : item.format === 'MANUAL' ? 'Entered manually' : 'Barcode'}
                     {' · '}
-                    {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(item.created_at))}
+                    {new Intl.DateTimeFormat('en-IN', {
+                      dateStyle: 'medium',
+                      timeZone: 'Asia/Kolkata',
+                    }).format(new Date(item.created_at))}
                   </p>
                 </div>
 

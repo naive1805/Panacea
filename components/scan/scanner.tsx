@@ -12,6 +12,27 @@ import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { saveScannedBarcode } from '@/lib/actions/barcodes'
 import { lookupMedicineByBarcode } from '@/lib/actions/medicine-info'
 
+const BARCODE_FORMAT_NAMES: Record<number, string> = {
+  0: 'AZTEC',
+  1: 'CODABAR',
+  2: 'CODE 39',
+  3: 'CODE 93',
+  4: 'CODE 128',
+  5: 'DATA MATRIX',
+  6: 'EAN 8',
+  7: 'EAN 13',
+  8: 'ITF',
+  9: 'MAXICODE',
+  10: 'PDF 417',
+  11: 'QR CODE',
+  12: 'RSS 14',
+  13: 'RSS EXPANDED',
+  14: 'UPC A',
+  15: 'UPC E',
+  16: 'UPC EAN EXTENSION',
+  17: 'MICRO QR CODE',
+}
+
 type ScannerState =
   | { phase: 'idle' }
   | { phase: 'starting' }
@@ -110,7 +131,8 @@ export function Scanner() {
         video,
         (result) => {
           if (result && !processingRef.current) {
-            const format = result.getBarcodeFormat().toString()
+            const barcodeFormat = result.getBarcodeFormat()
+            const format = BARCODE_FORMAT_NAMES[barcodeFormat] ?? String(barcodeFormat)
             void saveCode(result.getText(), format)
           }
         },
@@ -210,11 +232,14 @@ export function Scanner() {
                 {state.phase === 'error' ? (
                   <p role="alert">{state.message}</p>
                 ) : state.phase === 'saved' ? (
-                  <p role="status" className="inline-flex items-center gap-2">
-                    <Check className="size-4 text-success" />
-                    {state.duplicate ? 'This barcode is already in your register.' : 'Barcode saved to your register.'}
-                    <span className="font-medium text-white">{state.code}</span>
-                  </p>
+                  <div role="status" className="flex flex-col items-center gap-1">
+                    <p className="inline-flex items-center gap-2">
+                      <Check className="size-4 text-success" />
+                      {state.duplicate ? 'This barcode is already in your register.' : 'Barcode read and saved.'}
+                    </p>
+                    <p className="font-medium text-white">{state.code}</p>
+                    <p className="text-xs text-white/70">No catalog match was available. Assign it in your register or add the medicine details manually.</p>
+                  </div>
                 ) : state.phase === 'matched' ? (
                   <div role="status" className="flex flex-col items-center gap-1">
                     <p className="inline-flex items-center gap-2">
@@ -240,6 +265,13 @@ export function Scanner() {
                   className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   Review and shelf medicine <ArrowRight className="size-4" />
+                </Link>
+              ) : state.phase === 'saved' ? (
+                <Link
+                  href={`/dashboard/medicines/new?${new URLSearchParams({ from: 'scan', barcode: state.code }).toString()}`}
+                  className="inline-flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  Add medicine to shelf <ArrowRight className="size-4" />
                 </Link>
               ) : (
                 <button
