@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code)
 
     if (!error) {
+      await supabase.auth.signOut({ scope: 'local' })
       return NextResponse.redirect(new URL(next, request.url))
     }
   }
@@ -29,6 +30,7 @@ export async function GET(request: NextRequest) {
     })
 
     if (!error) {
+      await supabase.auth.signOut({ scope: 'local' })
       return NextResponse.redirect(new URL(next, request.url))
     }
   }

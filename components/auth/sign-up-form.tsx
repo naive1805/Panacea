@@ -23,7 +23,7 @@ function emailConfirmationRedirect(): string {
       const localHosts = new Set(['localhost', '127.0.0.1', '::1'])
       if (!localHosts.has(configured.hostname)) {
         const callback = new URL('/auth/confirm', configured.origin)
-        callback.searchParams.set('next', '/dashboard')
+        callback.searchParams.set('next', '/sign-in?confirmed=true')
         return callback.toString()
       }
     } catch {
@@ -32,7 +32,7 @@ function emailConfirmationRedirect(): string {
   }
 
   const callback = new URL('/auth/confirm', currentOrigin)
-  callback.searchParams.set('next', '/dashboard')
+  callback.searchParams.set('next', '/sign-in?confirmed=true')
   return callback.toString()
 }
 

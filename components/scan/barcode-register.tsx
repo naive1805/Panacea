@@ -107,7 +107,7 @@ export function BarcodeRegister({ barcodes, medicines }: BarcodeRegisterProps) {
             return (
               <li key={item.id} className="flex min-w-0 flex-col gap-4 px-5 py-4">
                 <div className="min-w-0 flex-1">
-                  <p className="break-words font-mono text-sm font-medium tabular-nums text-foreground">{item.barcode}</p>
+                  <p className="block w-full min-w-0 overflow-x-auto whitespace-nowrap font-mono text-sm font-medium tabular-nums text-foreground">{item.barcode}</p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {item.format && item.format !== 'MANUAL' ? item.format.replaceAll('_', ' ') : item.format === 'MANUAL' ? 'Entered manually' : 'Barcode'}
                     {' · '}
